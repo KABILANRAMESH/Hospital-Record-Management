@@ -1,0 +1,51 @@
+const mongoose = require("mongoose");
+
+const appointmentSchema = new mongoose.Schema(
+  {
+    patientId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Patient",
+      required: true,
+    },
+
+    doctorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+
+    appointmentDate: {
+      type: Date,
+      required: true,
+    },
+
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
+
+    // ✅ ADD THIS 👇
+    medicalRecord: {
+      diagnosis: {
+        type: String,
+        default: "",
+      },
+      prescription: {
+        type: String,
+        default: "",
+      },
+      notes: {
+        type: String,
+        default: "",
+      },
+      recordedAt: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("Appointment", appointmentSchema);

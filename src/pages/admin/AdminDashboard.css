@@ -1,0 +1,125 @@
+.admin-dashboard {
+  padding: 30px;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.admin-dashboard h1 {
+  color: #1f2937;
+}
+
+.admin-name {
+  margin-top: 5px;
+  color: #374151;
+}
+
+/* CARDS */
+.cards {
+  display: flex;
+  gap: 20px;
+  margin-top: 25px;
+  flex-wrap: wrap;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 220px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.card h3 {
+  color: #2563eb;
+  margin-bottom: 8px;
+}
+
+.card p {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+/* TABLE */
+.table-section {
+  margin-top: 35px;
+}
+
+.table-section h3 {
+  margin-bottom: 12px;
+  color: #1f2937;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+table th,
+table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+table th {
+  background: #f1f5f9;
+  color: #374151;
+}
+
+/* LOGOUT */
+.logout-btn {
+  margin-top: 30px;
+  padding: 12px 18px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.logout-btn:hover {
+  background: #dc2626;
+}
+/* ADD DOCTOR SECTION */
+.add-doctor-section {
+  margin-top: 40px;
+  background: white;
+  padding: 25px;
+  border-radius: 14px;
+  max-width: 420px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.add-doctor-section h3 {
+  margin-bottom: 18px;
+  color: #1f2937;
+}
+
+.add-doctor-form input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 14px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+}
+
+.add-doctor-form button {
+  width: 100%;
+  padding: 12px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.add-doctor-form button:hover {
+  background: #1e40af;
+}
