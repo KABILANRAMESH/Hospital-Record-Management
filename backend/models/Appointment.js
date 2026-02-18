@@ -44,6 +44,13 @@ const appointmentSchema = new mongoose.Schema(
         default: Date.now,
       },
     },
+    report: {
+  fileName: String,
+  fileType: String,
+  data: Buffer,
+  uploadedAt: Date,
+}
+
   },
   { timestamps: true }
 );

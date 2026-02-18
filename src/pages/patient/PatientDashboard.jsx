@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./PatientDashboard.css";
+import PatientLayout from "../../components/layouts/PatientLayout";
 
 function PatientDashboard() {
   const [patient, setPatient] = useState(null);
@@ -15,76 +16,111 @@ function PatientDashboard() {
     }
   }, [navigate]);
 
-  if (!patient) return <p className="loading">Loading...</p>;
+  if (!patient) {
+    return (
+      <div className="loading-container">
+        <div className="spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="dashboard-layout">
-      {/* SIDEBAR */}
-      <aside className="sidebar">
-        <h2 className="logo">💙 HealthSync</h2>
-
-        <nav>
-          <button className="active">Dashboard</button>
-          <button onClick={() => navigate("/patient/appointments")}>
-            Appointments
-          </button>
-          <button onClick={() => navigate("/patient/medical-history")}>
-            Medical Records
-          </button>
-          <button onClick={() => navigate("/patient/book-appointment")}>
-            Book Appointment
-          </button>
-          <button
-            className="logout"
-            onClick={() => {
-              localStorage.clear();
-              navigate("/");
-            }}
-          >
-            Logout
-          </button>
-        </nav>
-      </aside>
-
-      {/* MAIN */}
-      <main className="content">
-        {/* HEADER CARD */}
-        <div className="header-card">
-          <h1>Patient Dashboard</h1>
+    <PatientLayout active="dashboard">
+      {/* HEADER */}
+      <div className="pro-header">
+        <div>
+          <h1>{patient.fullName}</h1>
           <p>
-            Patient ID: <strong>{patient.patientId}</strong>
+            Patient ID: <span>{patient.patientId}</span>
           </p>
         </div>
 
-        {/* INFO CARD */}
-        <div className="card">
-          <h2>General Information</h2>
+        
+      </div>
 
-          <div className="info-grid">
-            <p><strong>Name:</strong> {patient.fullName}</p>
-            <p><strong>Email:</strong> {patient.email}</p>
-            <p><strong>Mobile:</strong> {patient.mobile}</p>
-            <p><strong>Gender:</strong> {patient.gender}</p>
-            <p><strong>Age:</strong> {patient.age}</p>
-            <p><strong>Blood Group:</strong> {patient.bloodGroup}</p>
-            <p><strong>Height:</strong> {patient.height} cm</p>
-            <p><strong>Weight:</strong> {patient.weight} kg</p>
+      {/* STATS */}
+      <div className="pro-stats">
+        <StatCard
+          title="Heart Rate"
+          value="72"
+          unit="bpm"
+          icon="HR"
+          color="rose"
+        />
 
-            <p className="full">
-              <strong>Address:</strong> {patient.address}
-            </p>
-          </div>
+        <StatCard
+          title="Blood Group"
+          value={patient.bloodGroup}
+          icon="Blood"
+          color="blue"
+        />
+
+        <StatCard
+          title="Health Status"
+          value="Good"
+          icon="Status"
+          color="green"
+        />
+      </div>
+
+      {/* DETAILS */}
+      <div className="pro-card">
+        <h2>
+          <span className="material-symbols-outlined">Personal Information</span>
+          
+        </h2>
+<br></br>
+        <div className="pro-info-grid">
+          <Info label="Full Name" value={patient.fullName} />
+          <Info label="Email" value={patient.email} />
+          <Info label="Mobile" value={patient.mobile} />
+          <Info label="Gender" value={patient.gender} />
+          <Info label="Age" value={`${patient.age} years`} />
+          <Info label="Height" value={`${patient.height} cm`} />
+          <Info label="Weight" value={`${patient.weight} kg`} />
+          <Info label="Address" value={patient.address} full />
         </div>
+      </div>
 
-        {/* EXTRA FILL CARD (optional but recommended) */}
-        <div className="card tip">
-          <h3>💡 Health Tip</h3>
+      {/* HEALTH TIP */}
+      <div className="health-tip">
+        <div className="tip-icon">💡</div>
+        <div>
+          <h3>Health Insight</h3>
           <p>
-            Stay hydrated and maintain a balanced diet. Regular checkups help
-            prevent future health issues.
+            Stay hydrated and maintain a balanced diet. Your vitals look stable.
+            Continue regular exercise and proper sleep.
           </p>
         </div>
-      </main>
+      </div>
+    </PatientLayout>
+  );
+}
+
+/* ---------- COMPONENTS ---------- */
+
+function StatCard({ title, value, unit, icon, color }) {
+  return (
+    <div className={`pro-stat ${color}`}>
+      <div className="stat-icon">
+        <span className="material-symbols-outlined">{icon}</span>
+      </div>
+      <div>
+        <p>{title}</p>
+        <h3>
+          {value} {unit}
+        </h3>
+      </div>
+    </div>
+  );
+}
+
+function Info({ label, value, full }) {
+  return (
+    <div className={`pro-info ${full ? "full" : ""}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }

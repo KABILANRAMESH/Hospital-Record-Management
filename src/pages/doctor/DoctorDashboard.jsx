@@ -5,243 +5,228 @@ import "./DoctorDashboard.css";
 
 function DoctorDashboard() {
   const navigate = useNavigate();
-
-  // read user ONCE
   const user = JSON.parse(localStorage.getItem("user"));
 
   const [appointments, setAppointments] = useState([]);
 
-  // medical record states
+  // medical record
   const [showRecordBox, setShowRecordBox] = useState(false);
   const [selectedApptId, setSelectedApptId] = useState(null);
-
   const [diagnosis, setDiagnosis] = useState("");
   const [prescription, setPrescription] = useState("");
   const [notes, setNotes] = useState("");
 
-  // 🔐 Auth check + load appointments (RUN ONCE)
+  // report upload
+  const [showUploadBox, setShowUploadBox] = useState(false);
+  const [reportFile, setReportFile] = useState(null);
+
   useEffect(() => {
     if (!user || user.role !== "doctor") {
       navigate("/");
       return;
     }
-
     fetchAppointments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
   }, []);
 
-  // 🔹 Fetch appointment requests
   const fetchAppointments = async () => {
-    try {
-      const token = localStorage.getItem("token");
-
-      const res = await axios.get(
-        "http://localhost:5000/api/doctor/appointments",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setAppointments(res.data);
-    } catch (err) {
-      console.error(err.response?.data);
-      alert("Failed to load appointments");
-    }
+    const token = localStorage.getItem("token");
+    const res = await axios.get(
+      "http://localhost:5000/api/doctor/appointments",
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setAppointments(res.data);
   };
 
-  // 🔹 Approve / Reject appointment
   const updateStatus = async (id, status) => {
-    try {
-      const token = localStorage.getItem("token");
-
-      await axios.put(
-        `http://localhost:5000/api/doctor/appointments/${id}`,
-        { status },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      fetchAppointments();
-    } catch (err) {
-      alert("Failed to update appointment");
-    }
+    const token = localStorage.getItem("token");
+    await axios.put(
+      `http://localhost:5000/api/doctor/appointments/${id}`,
+      { status },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    fetchAppointments();
   };
 
-  // 🔹 Save / Update medical record
   const saveMedicalRecord = async () => {
-    try {
-      const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
+    await axios.put(
+      `http://localhost:5000/api/doctor/appointments/${selectedApptId}/medical-record`,
+      { diagnosis, prescription, notes },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      await axios.put(
-        `http://localhost:5000/api/doctor/appointments/${selectedApptId}/medical-record`,
-        {
-          diagnosis,
-          prescription,
-          notes,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+    setShowRecordBox(false);
+    setDiagnosis("");
+    setPrescription("");
+    setNotes("");
+    fetchAppointments();
+  };
 
-      alert("Medical record saved ✅");
+  const uploadReport = async () => {
+    if (!reportFile) return alert("Select a file");
 
-      setShowRecordBox(false);
-      setDiagnosis("");
-      setPrescription("");
-      setNotes("");
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("report", reportFile);
 
-      fetchAppointments();
-    } catch (err) {
-      alert("Failed to save medical record ❌");
+    await axios.post(
+      `http://localhost:5000/api/doctor/appointments/${selectedApptId}/report`,
+      formData,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    setShowUploadBox(false);
+    setReportFile(null);
+    fetchAppointments();
+  };
+
+ const viewReport = async id => {
+  const token = localStorage.getItem("token");
+
+  const res = await axios.get(
+    `http://localhost:5000/api/doctor/appointments/${id}/report`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: "blob",
     }
+  );
+
+  // 🔥 USE THE BLOB DIRECTLY
+  const fileURL = URL.createObjectURL(res.data);
+  window.open(fileURL, "_blank");
+};
+
+
+  const deleteReport = async id => {
+    if (!window.confirm("Delete this report?")) return;
+    const token = localStorage.getItem("token");
+    await axios.delete(
+      `http://localhost:5000/api/doctor/appointments/${id}/report`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    fetchAppointments();
   };
 
   if (!user) return null;
 
   return (
-    <div className="doctor-dashboard">
-      <h1>Doctor Dashboard</h1>
-      <p className="doctor-name">Welcome, Dr. {user.name}</p>
+    <div className="layout">
+      {/* SIDEBAR */}
+      <aside className="sidebar">
+        <h1 className="sidebar-title">
+          Doctor <br />
+          <span>Dashboard</span>
+        </h1>
 
-      {/* CARDS */}
-      <div className="cards">
-        <div className="card">
-          <h3>Total Appointments</h3>
-          <p>{appointments.length}</p>
+        <div className="online">
+          <span className="dot" />
+          Dr. {user.name} — Online
         </div>
 
-        <div className="card">
-          <h3>Pending Requests</h3>
-          <p>{appointments.filter(a => a.status === "pending").length}</p>
+        <div className="sidebar-cards">
+          <div className="side-card">
+            <h2>{appointments.length}</h2>
+            <p>Appointments</p>
+          </div>
+          <div className="side-card amber">
+            <h2>{appointments.filter(a => a.status === "pending").length}</h2>
+            <p>Pending</p>
+          </div>
+          <div className="side-card indigo">
+            <h2>{appointments.filter(a => a.status === "approved").length}</h2>
+            <p>Approved</p>
+          </div>
         </div>
+      </aside>
 
-        <div className="card">
-          <h3>Approved</h3>
-          <p>{appointments.filter(a => a.status === "approved").length}</p>
-        </div>
-      </div>
+      {/* MAIN */}
+      <main className="main">
+        <header className="top-header">
+          <input placeholder=" Search" />
+          <button onClick={() => { localStorage.clear(); navigate("/"); }}>
+            Logout
+          </button>
+        </header>
 
-      {/* TABLE */}
-      <div className="table-section">
-        <h3>Appointment Requests</h3>
+        <section className="content">
+          <h3>Appointment Requests</h3>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Patient Name</th>
-              <th>Date</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
+          {appointments.map(appt => (
+            <div className="appointment-card" key={appt._id}>
+              <div>
+                <h4>{appt.patientId.fullName}</h4>
+                <p>{new Date(appt.appointmentDate).toDateString()}</p>
+                <span className={`status ${appt.status}`}>
+                  {appt.status.toUpperCase()}
+                </span>
+              </div>
 
-          <tbody>
-            {appointments.length === 0 ? (
-              <tr>
-                <td colSpan="4">No appointment requests</td>
-              </tr>
-            ) : (
-              appointments.map((appt) => (
-                <tr key={appt._id}>
-                  <td>{appt.patientId.fullName}</td>
-                  <td>
-                    {new Date(appt.appointmentDate).toLocaleDateString()}
-                  </td>
-                  <td>{appt.status}</td>
-                  <td>
-                    {appt.status === "pending" ? (
+              <div className="card-actions">
+                {appt.status === "pending" && (
+                  <>
+                    <button className="btn approve" onClick={() => updateStatus(appt._id, "approved")}>Approve</button>
+                    <button className="btn reject" onClick={() => updateStatus(appt._id, "rejected")}>Reject</button>
+                  </>
+                )}
+
+                {appt.status === "approved" && (
+                  <>
+                    <button className="btn record" onClick={() => {
+                      setSelectedApptId(appt._id);
+                      setDiagnosis(appt.medicalRecord?.diagnosis || "");
+                      setPrescription(appt.medicalRecord?.prescription || "");
+                      setNotes(appt.medicalRecord?.notes || "");
+                      setShowRecordBox(true);
+                    }}>Medical Record</button>
+
+                    {appt.report?.fileName ? (
                       <>
-                        <button
-                          className="approve-btn"
-                          onClick={() => updateStatus(appt._id, "approved")}
-                        >
-                          Approve
-                        </button>
-
-                        <button
-                          className="reject-btn"
-                          onClick={() => updateStatus(appt._id, "rejected")}
-                        >
-                          Reject
-                        </button>
+                        <button className="btn view" onClick={() => viewReport(appt._id)}>View</button>
+                        <button className="btn delete" onClick={() => deleteReport(appt._id)}>Delete</button>
                       </>
-                    ) : appt.status === "approved" ? (
-                      <button
-                        className="record-btn"
-                        onClick={() => {
-                          setSelectedApptId(appt._id);
-                          setDiagnosis(appt.medicalRecord?.diagnosis || "");
-                          setPrescription(
-                            appt.medicalRecord?.prescription || ""
-                          );
-                          setNotes(appt.medicalRecord?.notes || "");
-                          setShowRecordBox(true);
-                        }}
-                      >
-                        {appt.medicalRecord
-                          ? "View / Edit Record"
-                          : "Add Medical Record"}
-                      </button>
                     ) : (
-                      "-"
+                      <button className="btn upload" onClick={() => {
+                        setSelectedApptId(appt._id);
+                        setShowUploadBox(true);
+                      }}>Upload</button>
                     )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </section>
+      </main>
 
-      {/* MEDICAL RECORD MODAL */}
+      {/* MODALS */}
       {showRecordBox && (
-        <div className="record-modal">
-          <div className="record-box">
+        <div className="modal">
+          <div className="modal-box">
             <h3>Medical Record</h3>
-
-            <input
-              placeholder="Diagnosis"
-              value={diagnosis}
-              onChange={(e) => setDiagnosis(e.target.value)}
-            />
-
-            <input
-              placeholder="Prescription"
-              value={prescription}
-              onChange={(e) => setPrescription(e.target.value)}
-            />
-
-            <textarea
-              placeholder="Notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-
-            <div className="record-actions">
-              <button onClick={saveMedicalRecord}>Save</button>
+            <input value={diagnosis} onChange={e => setDiagnosis(e.target.value)} placeholder="Diagnosis" />
+            <input value={prescription} onChange={e => setPrescription(e.target.value)} placeholder="Prescription" />
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes" />
+            <div className="modal-actions">
               <button onClick={() => setShowRecordBox(false)}>Cancel</button>
+              <button onClick={saveMedicalRecord}>Save</button>
             </div>
           </div>
         </div>
       )}
 
-      <button
-        className="logout-btn"
-        onClick={() => {
-          localStorage.clear();
-          navigate("/");
-        }}
-      >
-        Logout
-      </button>
+      {showUploadBox && (
+        <div className="modal">
+          <div className="modal-box">
+            <h3>Upload Report</h3>
+            <input type="file" onChange={e => setReportFile(e.target.files[0])} />
+            <div className="modal-actions">
+              <button onClick={() => setShowUploadBox(false)}>Cancel</button>
+              <button onClick={uploadReport}>Upload</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

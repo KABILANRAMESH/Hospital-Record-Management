@@ -1,0 +1,119 @@
+/* =====================
+   PATIENT DASHBOARD
+===================== */
+
+/* =====================
+   LAYOUT
+===================== */
+.dashboard-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background: #f5f6f8;
+  overflow: hidden; /* prevent page scroll */
+}
+
+/* =====================
+   SIDEBAR (FIXED)
+===================== */
+.dashboard-layout .sidebar.light {
+  width: 260px;
+  height: 100vh;
+  padding: 26px 22px;
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
+
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+}
+
+/* LOGO */
+.dashboard-layout .logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 34px;
+}
+
+.logo-icon {
+  width: 42px;
+  height: 42px;
+  background: #6366f1;
+  color: white;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =====================
+   NAVIGATION
+===================== */
+.dashboard-layout nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 15px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.nav-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.nav-btn.active {
+  background: #eef2ff;
+  color: #4f46e5;
+  font-weight: 600;
+}
+
+/* =====================
+   MAIN CONTENT (SCROLLS)
+===================== */
+.dashboard-layout .content {
+  margin-left: 260px; /* space for sidebar */
+  height: 100vh;
+  width: calc(100vw - 260px);
+
+  padding: 32px;
+  padding-bottom: 160px; /* 🔥 prevents last content from hiding */
+
+  overflow-y: auto;  /* ✅ RIGHT SIDE SCROLL */
+  overflow-x: hidden;
+
+  background: #f5f6f8;
+}
+
+/* =====================
+   OPTIONAL UTILITIES
+===================== */
+.section-title {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.card {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 20px;
+}

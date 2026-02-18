@@ -1,125 +1,126 @@
-.admin-dashboard {
-  padding: 30px;
-  background: #f8fafc;
-  min-height: 100vh;
-}
+/* =====================
+   ADMIN DASHBOARD
+===================== */
 
-.admin-dashboard h1 {
-  color: #1f2937;
-}
-
-.admin-name {
-  margin-top: 5px;
-  color: #374151;
-}
-
-/* CARDS */
-.cards {
+.layout {
   display: flex;
-  gap: 20px;
-  margin-top: 25px;
-  flex-wrap: wrap;
+  height: 100vh;
+  width: 100vw;
+  background: #fcfcfd;
 }
 
-.card {
+/* SIDEBAR */
+.layout .sidebar {
+  width: 320px;
+  height: 100vh;
+  padding: 32px;
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+/* MAIN — ONLY THIS SCROLLS */
+.layout .main {
+  flex: 1;
+  height: 100vh;
+
+  overflow-y: auto;   /* ✅ RIGHT SIDE SCROLL */
+  overflow-x: hidden;
+
+  padding: 40px;
+  padding-bottom: 40px; /* 🔥 space for Add Doctor */
+}
+
+/* UI ELEMENTS */
+.logo {
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.logo span {
+  color: #0d9488;
+  font-style: italic;
+}
+
+.online {
+  margin: 15px 0 30px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.stat-card {
   background: white;
   padding: 20px;
-  border-radius: 10px;
-  width: 220px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #e5e7eb;
 }
 
-.card h3 {
-  color: #2563eb;
-  margin-bottom: 8px;
+.amber {
+  border-left: 4px solid #f59e0b;
 }
 
-.card p {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1f2937;
+.indigo {
+  border-left: 4px solid #6366f1;
 }
 
-/* TABLE */
-.table-section {
-  margin-top: 35px;
-}
-
-.table-section h3 {
-  margin-bottom: 12px;
-  color: #1f2937;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-table th,
-table td {
-  padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-table th {
-  background: #f1f5f9;
-  color: #374151;
-}
-
-/* LOGOUT */
-.logout-btn {
+.logout {
   margin-top: 30px;
-  padding: 12px 18px;
+  width: 100%;
+  padding: 12px;
   background: #ef4444;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 14px;
   cursor: pointer;
-  font-size: 14px;
 }
 
-.logout-btn:hover {
-  background: #dc2626;
+.topbar {
+  margin-bottom: 30px;
 }
-/* ADD DOCTOR SECTION */
-.add-doctor-section {
+
+.search {
+  width: 60%;
+  padding: 14px 22px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+}
+
+.section-title {
+  font-size: 22px;
+  margin-bottom: 20px;
+}
+
+.list-card {
+  background: white;
+  padding: 22px;
+  border-radius: 24px;
+  margin-bottom: 18px;
+  border: 1px solid #e5e7eb;
+}
+
+.form-section {
   margin-top: 40px;
   background: white;
-  padding: 25px;
-  border-radius: 14px;
+  padding: 30px;
+  border-radius: 24px;
   max-width: 420px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
 
-.add-doctor-section h3 {
-  margin-bottom: 18px;
-  color: #1f2937;
-}
-
-.add-doctor-form input {
+.form-section input {
   width: 100%;
-  padding: 12px;
+  padding: 14px;
   margin-bottom: 14px;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid #d1d5db;
-  font-size: 14px;
 }
 
-.add-doctor-form button {
+.form-section button {
   width: 100%;
-  padding: 12px;
-  background: #2563eb;
+  padding: 14px;
+  background: #0d9488;
   color: white;
   border: none;
-  border-radius: 10px;
-  font-size: 15px;
+  border-radius: 14px;
   cursor: pointer;
-}
-
-.add-doctor-form button:hover {
-  background: #1e40af;
 }

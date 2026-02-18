@@ -1,49 +1,207 @@
-.patient-appointments {
-  padding: 20px;
+.pa-page {
+  max-width: 1400px;
+  margin: auto;
+  padding-bottom: 60px;
 }
 
-.patient-appointments h1 {
-  margin-bottom: 20px;
+/* HEADER */
+.pa-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
 }
 
-.patient-appointments table {
-  width: 100%;
-  border-collapse: collapse;
+.pa-header h1 {
+  font-size: 32px;
+  font-weight: 800;
 }
 
-.patient-appointments th,
-.patient-appointments td {
-  border: 1px solid #ddd;
-  padding: 10px;
-  text-align: center;
+.pa-header p {
+  color: #64748b;
+  margin-top: 4px;
 }
 
-.patient-appointments th {
-  background-color: #f5f5f5;
+/* FILTER */
+.pa-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
 }
 
-.status {
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: white;
-  font-weight: bold;
-  text-transform: capitalize;
-}
-
-.status.pending {
-  background-color: orange;
-}
-
-.status.approved {
-  background-color: green;
-}
-
-.status.rejected {
-  background-color: red;
-}
-
-button {
-  margin-top: 20px;
-  padding: 10px 16px;
+.pa-filter select {
+  border: none;
+  outline: none;
+  font-size: 14px;
+  font-weight: 600;
+  background: transparent;
   cursor: pointer;
+}
+
+/* GRID */
+.pa-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 30px;
+}
+
+/* CARD */
+.pa-card {
+  background: #fff;
+  padding: 32px;
+  border-radius: 25px;
+  border: 1px solid #e5e7eb;
+
+  /* PERFORMANCE */
+  will-change: transform;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pa-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.1);
+}
+
+/* TOP */
+.pa-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.pa-card-top h3 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.specialty {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+/* STATUS */
+.pa-status {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.pa-status.approved {
+  background: #dcfce7;
+  color: #047857;
+}
+
+.pa-status.pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+/* BODY */
+.pa-card-body {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 16px;
+}
+
+.info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.info .material-icons-round {
+  color: #4f46e5;
+  font-size: 18px;
+}
+
+/* FOOTER */
+.pa-footer {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.legend span {
+  margin-right: 18px;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.dot.approved {
+  background: #10b981;
+}
+
+.dot.pending {
+  background: #f59e0b;
+}
+
+/* LOADING TEXT */
+.pa-loading {
+  padding: 60px;
+  text-align: center;
+  color: #64748b;
+}
+
+/* 🦴 SKELETON LOADER */
+.pa-card.skeleton {
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    #f1f5f9 25%,
+    #e5e7eb 37%,
+    #f1f5f9 63%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+  height: 180px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .pa-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .pa-card-body {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .pa-footer {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
 }

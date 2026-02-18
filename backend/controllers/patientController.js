@@ -1,10 +1,11 @@
 const jwt = require("jsonwebtoken");
-const Patient = require("../models/Patient");
-const Appointment = require("../models/Appointment"); // ✅ KEEP ONLY THIS
-
 const bcrypt = require("bcryptjs");
+const Patient = require("../models/Patient");
+const Appointment = require("../models/Appointment");
 
-// REGISTER PATIENT
+/* =========================
+   REGISTER PATIENT
+========================= */
 exports.registerPatient = async (req, res) => {
   try {
     const {
@@ -26,8 +27,7 @@ exports.registerPatient = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-const patientId = `PAT${Date.now()}`;
-
+    const patientId = `PAT${Date.now()}`;
 
     const patient = new Patient({
       patientId,
@@ -49,13 +49,14 @@ const patientId = `PAT${Date.now()}`;
       success: true,
       message: "Patient registered successfully",
     });
-
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// LOGIN PATIENT
+/* =========================
+   LOGIN PATIENT
+========================= */
 exports.loginPatient = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -70,19 +71,15 @@ exports.loginPatient = async (req, res) => {
       return res.status(400).json({ message: "Invalid password" });
     }
 
-    // 🔑 CREATE JWT TOKEN
     const token = jwt.sign(
-      {
-        id: patient._id,
-        role: "patient",
-      },
+      { id: patient._id, role: "patient" },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
     res.json({
       success: true,
-      token, // ✅ IMPORTANT
+      token,
       patient: {
         _id: patient._id,
         patientId: patient.patientId,
@@ -102,14 +99,22 @@ exports.loginPatient = async (req, res) => {
   }
 };
 
-
+/* =========================
+   GET PATIENT APPOINTMENTS (FAST)
+========================= */
 exports.getPatientAppointments = async (req, res) => {
   try {
+    console.time("appointments-query");
+
     const appointments = await Appointment.find({
       patientId: req.user.id,
     })
-      .populate("doctorId", "name email")
-      .sort({ createdAt: -1 });
+      .select("appointmentDate status doctorId") // 🔥 only required fields
+      .populate("doctorId", "name")               // 🔥 minimal populate
+      .sort({ appointmentDate: -1 })              // 🔥 indexed field
+      .limit(10);                                 // 🔥 pagination
+
+    console.timeEnd("appointments-query");
 
     res.json(appointments);
   } catch (err) {
@@ -117,21 +122,63 @@ exports.getPatientAppointments = async (req, res) => {
   }
 };
 
-// GET patient medical history
+/* =========================
+   GET MEDICAL HISTORY (FAST)
+========================= */
 exports.getMedicalHistory = async (req, res) => {
   try {
+    console.time("medical-history");
+
     const appointments = await Appointment.find({
       patientId: req.user.id,
       status: "approved",
-      medicalRecord: { $exists: true },
     })
-      .populate("doctorId", "name email")
-      .sort({ appointmentDate: -1 });
+      .select(
+        "appointmentDate doctorId medicalRecord report.fileName"
+      ) // 🚀 DO NOT FETCH report.data
+      .populate("doctorId", "name")
+      .sort({ appointmentDate: -1 })
+      .limit(20); // optional but recommended
+
+    console.timeEnd("medical-history");
 
     res.json(appointments);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Failed to fetch medical history" });
   }
 };
 
 
+
+
+/* =========================
+   VIEW / DOWNLOAD REPORT
+========================= */
+exports.viewPatientReport = async (req, res) => {
+  try {
+    const appointment = await Appointment.findById(req.params.id)
+      .select("patientId report");
+
+    if (!appointment) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    if (appointment.patientId.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    if (!appointment.report || !appointment.report.data) {
+      return res.status(404).json({ message: "No report found" });
+    }
+
+    res.set({
+      "Content-Type": appointment.report.fileType,
+      "Content-Disposition": `inline; filename="${appointment.report.fileName}"`,
+    });
+
+    res.send(appointment.report.data);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to load report" });
+  }
+};
