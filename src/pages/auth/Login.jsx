@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../../services/axios";
 import { useNavigate } from "react-router-dom";
 import "./Login.css";
 
@@ -16,10 +16,10 @@ function Login() {
       let response;
 
     if (role === "patient") {
-  response = await axios.post(
-    "http://localhost:5000/api/patients/login",
-    { email, password }
-  );
+  response = await api.post(
+  "/api/patients/login",
+  { email, password }
+);
 
   // ✅ SAVE TOKEN (THIS WAS MISSING)
   localStorage.setItem("token", response.data.token);
@@ -33,8 +33,8 @@ function Login() {
   navigate("/patient/dashboard");
 }
 else {
-response = await axios.post(
-  "http://localhost:5000/api/auth/login",
+response = await api.post(
+  "/api/auth/login",
   { email, password, role }
 );
 

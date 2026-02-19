@@ -1,5 +1,5 @@
-import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
+import api from "../../services/axios";
 import { useNavigate } from "react-router-dom";
 import "./PatientAppointments.css";
 import PatientLayout from "../../components/layouts/PatientLayout";
@@ -22,8 +22,8 @@ function PatientAppointments() {
       try {
         setLoading(true);
 
-        const res = await axios.get(
-          "http://localhost:5000/api/patients/appointments",
+        const res = await api.get(
+          "/api/patients/appointments",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -38,7 +38,7 @@ function PatientAppointments() {
     };
 
     fetchAppointments();
-  }, []); // ✅ no unnecessary dependencies
+  }, [navigate]);
 
   /* 🔹 FAST FILTER (memoized) */
   const filteredAppointments = useMemo(() => {
@@ -60,7 +60,6 @@ function PatientAppointments() {
   return (
     <PatientLayout active="appointments">
       <div className="pa-page">
-
         {/* HEADER */}
         <header className="pa-header">
           <div>

@@ -1,11 +1,11 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
+import api from "../../services/axios";
 import "./PatientMedicalHistory.css";
 import PatientLayout from "../../components/layouts/PatientLayout";
 
 function PatientMedicalHistory() {
   const [records, setRecords] = useState([]);
-  const [loading, setLoading] = useState(true); // ✅ MOVED INSIDE COMPONENT
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchMedicalHistory();
@@ -16,8 +16,8 @@ function PatientMedicalHistory() {
       setLoading(true);
 
       const token = localStorage.getItem("token");
-      const res = await axios.get(
-        "http://localhost:5000/api/patients/medical-history",
+      const res = await api.get(
+        "/api/patients/medical-history",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -35,8 +35,8 @@ function PatientMedicalHistory() {
   const viewReport = async (apptId) => {
     const token = localStorage.getItem("token");
 
-    const res = await axios.get(
-      `http://localhost:5000/api/patients/appointments/${apptId}/report`,
+    const res = await api.get(
+      `/api/patients/appointments/${apptId}/report`,
       {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
@@ -55,8 +55,8 @@ function PatientMedicalHistory() {
   const downloadReport = async (apptId, fileName = "medical-report") => {
     const token = localStorage.getItem("token");
 
-    const res = await axios.get(
-      `http://localhost:5000/api/patients/appointments/${apptId}/report`,
+    const res = await api.get(
+      `/api/patients/appointments/${apptId}/report`,
       {
         headers: { Authorization: `Bearer ${token}` },
         responseType: "blob",
@@ -77,13 +77,11 @@ function PatientMedicalHistory() {
   return (
     <PatientLayout active="medical">
       <div className="mh-container">
-        {/* HEADER */}
         <header className="mh-header">
           <h1>Medical History</h1>
           <p>View and track your previous consultations and treatments.</p>
         </header>
 
-        {/* TIMELINE */}
         <div className="timeline">
           {loading ? (
             <p className="loading-text">Loading medical history...</p>
@@ -92,37 +90,21 @@ function PatientMedicalHistory() {
           ) : (
             records.map((rec, index) => (
               <div className="timeline-item" key={rec._id}>
-                <div
-                  className={`timeline-dot ${
-                    index === 0 ? "active" : ""
-                  }`}
-                />
+                <div className={`timeline-dot ${index === 0 ? "active" : ""}`} />
 
-                <div
-                  className={`timeline-card ${
-                    index === 0 ? "recent" : ""
-                  }`}
-                >
+                <div className={`timeline-card ${index === 0 ? "recent" : ""}`}>
                   <div className="card-header">
-                    {index === 0 && (
-                      <span className="badge">Most Recent</span>
-                    )}
+                    {index === 0 && <span className="badge">Most Recent</span>}
 
                     <h3>
                       {new Date(rec.appointmentDate).toLocaleDateString(
                         "en-US",
-                        {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        }
+                        { day: "2-digit", month: "short", year: "numeric" }
                       )}
                     </h3>
 
                     <div className="doctor">
-                      <span className="material-symbols-outlined">
-                        person
-                      </span>
+                      <span className="material-symbols-outlined">person</span>
                       Dr. {rec.doctorId?.name || "—"}
                     </div>
                   </div>
@@ -146,27 +128,17 @@ function PatientMedicalHistory() {
                     </div>
                   </div>
 
-                  {/* REPORT ACTIONS */}
                   {rec.report?.fileName && (
                     <div className="report-actions">
                       <button onClick={() => viewReport(rec._id)}>
-                        <span className="material-symbols-outlined">
-                          
-                        </span>
                         View Report
                       </button>
 
                       <button
                         onClick={() =>
-                          downloadReport(
-                            rec._id,
-                            rec.report.fileName
-                          )
+                          downloadReport(rec._id, rec.report.fileName)
                         }
                       >
-                        <span className="material-symbols-outlined">
-                          
-                        </span>
                         Download
                       </button>
                     </div>
@@ -177,7 +149,6 @@ function PatientMedicalHistory() {
           )}
         </div>
 
-        {/* FOOTER */}
         <footer className="mh-footer">
           <p>Showing records for the last 12 months</p>
         </footer>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../../services/axios";
 import { useNavigate } from "react-router-dom";
 import "./Register.css";
 
@@ -26,10 +26,10 @@ function Register() {
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(
-        "http://localhost:5000/api/patients/register",
-        formData
-      );
+     await api.post(
+  "/api/patients/register",
+  formData
+);
       alert("Registration successful! Please login.");
       navigate("/");
     } catch (error) {

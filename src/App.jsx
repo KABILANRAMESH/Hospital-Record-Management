@@ -9,6 +9,7 @@ import DoctorDashboard from "./pages/doctor/DoctorDashboard";
 import PatientDashboard from "./pages/patient/PatientDashboard";
 
 function App() {
+
   return (
     <BrowserRouter>
       <Routes>

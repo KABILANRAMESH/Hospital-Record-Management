@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../services/axios";
 import { useNavigate } from "react-router-dom";
 import "./BookAppointment.css";
 import PatientLayout from "../../components/layouts/PatientLayout";
@@ -12,13 +12,12 @@ function BookAppointment() {
   const [date, setDate] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Fetch doctors (FAST + SAFE)
+  // 🔹 Fetch doctors
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
         setLoading(true);
 
-        // ✅ Cache check (optional but powerful)
         const cached = sessionStorage.getItem("doctors");
         if (cached) {
           setDoctors(JSON.parse(cached));
@@ -27,8 +26,8 @@ function BookAppointment() {
         }
 
         const token = localStorage.getItem("token");
-        const res = await axios.get(
-          "http://localhost:5000/api/patients/doctors",
+        const res = await api.get(
+          "/api/patients/doctors",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -55,8 +54,8 @@ function BookAppointment() {
 
     try {
       const token = localStorage.getItem("token");
-      await axios.post(
-        "http://localhost:5000/api/patients/appointments",
+      await api.post(
+        "/api/patients/appointments",
         {
           doctorId,
           appointmentDate: date,
@@ -77,21 +76,15 @@ function BookAppointment() {
     <PatientLayout active="book">
       <div className="book-appointment-wrapper">
         <div className="book-appointment-card">
-
-          {/* HEADER */}
           <div className="header-section">
-            <div className="icon-wrapper">
-              📅
-            </div>
+            <div className="icon-wrapper">📅</div>
             <h2>Book Your Appointment</h2>
             <p className="subtitle">
               Choose your preferred doctor and date
             </p>
           </div>
 
-          {/* FORM */}
           <div className="form-section">
-            {/* DOCTOR SELECT */}
             <div className="form-group">
               <label>Select Doctor</label>
 
@@ -113,7 +106,6 @@ function BookAppointment() {
               )}
             </div>
 
-            {/* DATE SELECT */}
             <div className="form-group">
               <label>Select Date</label>
               <input
@@ -125,7 +117,6 @@ function BookAppointment() {
               />
             </div>
 
-            {/* BUTTON */}
             <button
               onClick={handleBook}
               className="book-button"

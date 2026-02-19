@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import api from "../../services/axios";
 import "./AdminDashboard.css";
 
 function AdminDashboard() {
@@ -31,12 +31,11 @@ function AdminDashboard() {
     setUser(storedUser);
     fetchStats();
     fetchDoctors();
-    // eslint-disable-next-line
   }, []);
 
   const fetchStats = async () => {
     const token = localStorage.getItem("token");
-    const res = await axios.get("http://localhost:5000/api/admin/stats", {
+    const res = await api.get("/api/admin/stats", {
       headers: { Authorization: `Bearer ${token}` },
     });
     setStats(res.data);
@@ -44,7 +43,7 @@ function AdminDashboard() {
 
   const fetchDoctors = async () => {
     const token = localStorage.getItem("token");
-    const res = await axios.get("http://localhost:5000/api/admin/doctors", {
+    const res = await api.get("/api/admin/doctors", {
       headers: { Authorization: `Bearer ${token}` },
     });
     setDoctors(res.data);
@@ -58,8 +57,8 @@ function AdminDashboard() {
     e.preventDefault();
     const token = localStorage.getItem("token");
 
-    await axios.post(
-      "http://localhost:5000/api/admin/add-doctor",
+    await api.post(
+      "/api/admin/add-doctor",
       doctorForm,
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -108,7 +107,6 @@ function AdminDashboard() {
         </button>
       </aside>
 
-      {/* RIGHT SIDE — THIS SCROLLS */}
       <main className="main">
         <header className="topbar">
           <input className="search" placeholder="Search doctors, emails..." />
