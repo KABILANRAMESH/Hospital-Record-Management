@@ -9,11 +9,19 @@ const patientRoutes = require("./routes/patientRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const doctorRoutes = require("./routes/doctorRoutes");
 
-
 const app = express();
 
-// middleware
-app.use(cors());
+// ✅ FIXED CORS
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://hospital-frontend-u08s.onrender.com"
+    ],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
 // connect DB
@@ -29,7 +37,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/patients", patientRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/doctor", doctorRoutes);
-
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
