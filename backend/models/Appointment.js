@@ -18,6 +18,9 @@ const appointmentSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    visitTime: {
+  type: String,
+},
 
     status: {
       type: String,

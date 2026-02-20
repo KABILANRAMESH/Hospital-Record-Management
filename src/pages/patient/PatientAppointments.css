@@ -162,6 +162,16 @@
   text-align: center;
   color: #64748b;
 }
+.visit-time {
+  font-weight: 600;
+  color: #0f766e;
+}
+
+.visit-pending {
+  font-size: 13px;
+  color: #64748b;
+  font-style: italic;
+}
 
 /* 🦴 SKELETON LOADER */
 .pa-card.skeleton {

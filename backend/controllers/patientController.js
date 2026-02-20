@@ -109,8 +109,7 @@ exports.getPatientAppointments = async (req, res) => {
     const appointments = await Appointment.find({
       patientId: req.user.id,
     })
-      .select("appointmentDate status doctorId") // 🔥 only required fields
-      .populate("doctorId", "name")               // 🔥 minimal populate
+.select("appointmentDate status visitTime doctorId")      .populate("doctorId", "name")               // 🔥 minimal populate
       .sort({ appointmentDate: -1 })              // 🔥 indexed field
       .limit(10);                                 // 🔥 pagination
 

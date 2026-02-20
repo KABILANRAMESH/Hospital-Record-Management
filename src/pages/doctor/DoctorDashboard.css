@@ -171,3 +171,37 @@ html, body {
   gap: 12px;
   margin-top: 20px;
 }
+.appt-date {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #475569;
+}
+.time-input {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  font-size: 12px;
+}
+.time-chip {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px dashed #94a3b8;
+  background: #539ae2;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.appt-time {
+  font-size: 13px;
+  color: #0f766e;
+  font-weight: 500;
+}
+
+.time-modal-input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 16px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  font-size: 14px;
+}

@@ -114,9 +114,18 @@ function PatientAppointments() {
                     </div>
 
                     <div className="info">
-                      <span className="material-icons-round">Schedule:</span>
-                      <span>10:00 AM – 10:30 AM</span>
-                    </div>
+  <span className="material-icons-round">Schedule:</span>
+
+  {a.status === "approved" && a.visitTime ? (
+    <span className="visit-time">
+      ⏰ {a.visitTime}
+    </span>
+  ) : (
+    <span className="visit-pending">
+      To be assigned
+    </span>
+  )}
+</div>
                   </div>
                 </div>
               ))}

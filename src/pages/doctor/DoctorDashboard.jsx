@@ -6,7 +6,6 @@ import "./DoctorDashboard.css";
 function DoctorDashboard() {
   const navigate = useNavigate();
 
-  // SAFE user read
   const user = (() => {
     try {
       return JSON.parse(localStorage.getItem("user"));
@@ -18,15 +17,22 @@ function DoctorDashboard() {
   const [appointments, setAppointments] = useState([]);
 
   const [showRecordBox, setShowRecordBox] = useState(false);
+  const [showUploadBox, setShowUploadBox] = useState(false);
+  const [showTimeBox, setShowTimeBox] = useState(false);
+
   const [selectedApptId, setSelectedApptId] = useState(null);
+
   const [diagnosis, setDiagnosis] = useState("");
   const [prescription, setPrescription] = useState("");
   const [notes, setNotes] = useState("");
 
-  const [showUploadBox, setShowUploadBox] = useState(false);
+  // 🔥 store time per appointment
+  const [visitTimes, setVisitTimes] = useState({});
+
+  const [tempTime, setTempTime] = useState("");
   const [reportFile, setReportFile] = useState(null);
 
-  // AUTH GUARD
+  /* ================= AUTH ================= */
   useEffect(() => {
     if (!user || user.role !== "doctor") {
       navigate("/");
@@ -35,7 +41,7 @@ function DoctorDashboard() {
     fetchAppointments();
   }, [navigate]);
 
-  // FETCH APPOINTMENTS
+  /* ================= FETCH ================= */
   const fetchAppointments = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -43,28 +49,34 @@ function DoctorDashboard() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setAppointments(res.data);
-    } catch (err) {
-      console.error(err);
-      alert("Session expired. Please login again.");
+    } catch {
+      alert("Session expired");
       localStorage.clear();
       navigate("/");
     }
   };
 
+  /* ================= APPROVE / REJECT ================= */
   const updateStatus = async (id, status) => {
     try {
       const token = localStorage.getItem("token");
+
       await api.put(
         `/api/doctor/appointments/${id}`,
-        { status },
+        {
+          status,
+          visitTime: visitTimes[id] || "",
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
       fetchAppointments();
     } catch {
       alert("Failed to update status");
     }
   };
 
+  /* ================= MEDICAL RECORD ================= */
   const saveMedicalRecord = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -73,6 +85,7 @@ function DoctorDashboard() {
         { diagnosis, prescription, notes },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
       setShowRecordBox(false);
       setDiagnosis("");
       setPrescription("");
@@ -83,61 +96,52 @@ function DoctorDashboard() {
     }
   };
 
+  /* ================= REPORT ================= */
   const uploadReport = async () => {
     if (!reportFile) return alert("Select a file");
+
     try {
       const token = localStorage.getItem("token");
       const formData = new FormData();
       formData.append("report", reportFile);
+
       await api.post(
         `/api/doctor/appointments/${selectedApptId}/report`,
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
       setShowUploadBox(false);
       setReportFile(null);
       fetchAppointments();
     } catch {
-      alert("Failed to upload report");
+      alert("Upload failed");
     }
   };
 
   const viewReport = async (id) => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await api.get(
-        `/api/doctor/appointments/${id}/report`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: "blob",
-        }
-      );
-      const fileURL = URL.createObjectURL(res.data);
-      window.open(fileURL, "_blank");
-    } catch {
-      alert("Failed to open report");
-    }
+    const token = localStorage.getItem("token");
+    const res = await api.get(`/api/doctor/appointments/${id}/report`, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: "blob",
+    });
+    window.open(URL.createObjectURL(res.data));
   };
 
   const deleteReport = async (id) => {
-    if (!window.confirm("Delete this report?")) return;
-    try {
-      const token = localStorage.getItem("token");
-      await api.delete(
-        `/api/doctor/appointments/${id}/report`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      fetchAppointments();
-    } catch {
-      alert("Failed to delete report");
-    }
+    if (!window.confirm("Delete report?")) return;
+    const token = localStorage.getItem("token");
+    await api.delete(`/api/doctor/appointments/${id}/report`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    fetchAppointments();
   };
 
   if (!user) return null;
 
   return (
     <div className="layout">
-      {/* SIDEBAR */}
+      {/* ========== SIDEBAR ========== */}
       <aside className="sidebar">
         <h2 className="sidebar-title">
           Doctor <span>Panel</span>
@@ -161,95 +165,168 @@ function DoctorDashboard() {
         </div>
       </aside>
 
-      {/* MAIN */}
+      {/* ========== MAIN ========== */}
       <div className="main">
         <div className="top-header">
           <h3>Appointments</h3>
-          <button
-            className="btn reject"
-            onClick={() => {
-              localStorage.clear();
-              navigate("/");
-            }}
-          >
+          <button className="btn reject" onClick={() => navigate("/")}>
             Logout
           </button>
         </div>
 
         <div className="content">
-         {appointments.map((appt) => (
-  <div className="appointment-card" key={appt._id}>
-    <div>
-      <h4>{appt.patientId?.fullName || "Patient"}</h4>
+          {appointments.map((appt) => (
+            <div className="appointment-card" key={appt._id}>
+              <div>
+                <h4>{appt.patientId?.fullName || "Patient"}</h4>
 
-      <span className={`status ${appt.status}`}>
-        {appt.status}
-      </span>
-    </div>
+                <p className="appt-date">
+                  📅 {new Date(appt.appointmentDate).toLocaleDateString()}
+                </p>
 
-    <div className="card-actions">
-      {appt.status === "pending" && (
-        <>
-          <button
-            className="btn approve"
-            onClick={() => updateStatus(appt._id, "approved")}
-          >
-            Approve
-          </button>
-          <button
-            className="btn reject"
-            onClick={() => updateStatus(appt._id, "rejected")}
-          >
-            Reject
-          </button>
-        </>
-      )}
+                {appt.visitTime && (
+                  <p className="appt-time">⏰ {appt.visitTime}</p>
+                )}
 
-      <button
-        className="btn record"
-        onClick={() => {
-          setSelectedApptId(appt._id);
-          setShowRecordBox(true);
-        }}
-      >
-        Add Record
-      </button>
+                <span className={`status ${appt.status}`}>
+                  {appt.status}
+                </span>
+              </div>
 
-      <button
-        className="btn upload"
-        onClick={() => {
-          setSelectedApptId(appt._id);
-          setShowUploadBox(true);
-        }}
-      >
-        Upload Report
-      </button>
+              <div className="card-actions">
+                {appt.status === "pending" && (
+                  <>
+                    <button
+                      className="time-chip"
+                      onClick={() => {
+                        setSelectedApptId(appt._id);
+                        setTempTime(visitTimes[appt._id] || "");
+                        setShowTimeBox(true);
+                      }}
+                    >
+                      {visitTimes[appt._id] || "Set Time"} ⏰
+                    </button>
 
-      <button
-        className="btn view"
-        onClick={() => viewReport(appt._id)}
-      >
-        View Report
-      </button>
+                    <button
+                      className="btn approve"
+                      disabled={!visitTimes[appt._id]}
+                      onClick={() => updateStatus(appt._id, "approved")}
+                    >
+                      Approve
+                    </button>
 
-      <button
-        className="btn delete"
-        onClick={() => deleteReport(appt._id)}
-      >
-        Delete Report
-      </button>
-    </div>
-  </div>
-))}
+                    <button
+                      className="btn reject"
+                      onClick={() => updateStatus(appt._id, "rejected")}
+                    >
+                      Reject
+                    </button>
+                  </>
+                )}
 
+                {/* ===== MEDICAL RECORD BUTTON ===== */}
+{appt.medicalRecord?.diagnosis ? (
+  <button
+    className="btn view"
+    onClick={() => {
+      setSelectedApptId(appt._id);
+      setDiagnosis(appt.medicalRecord.diagnosis);
+      setPrescription(appt.medicalRecord.prescription);
+      setNotes(appt.medicalRecord.notes);
+      setShowRecordBox(true);
+    }}
+  >
+    View / Edit Record
+  </button>
+) : (
+  <button
+    className="btn record"
+    onClick={() => {
+      setSelectedApptId(appt._id);
+      setDiagnosis("");
+      setPrescription("");
+      setNotes("");
+      setShowRecordBox(true);
+    }}
+  >
+    Add Record
+  </button>
+)}
+
+                {!appt.report && (
+                  <button
+                    className="btn upload"
+                    onClick={() => {
+                      setSelectedApptId(appt._id);
+                      setShowUploadBox(true);
+                    }}
+                  >
+                    Upload Report
+                  </button>
+                )}
+
+                {appt.report && (
+                  <>
+                    <button className="btn view" onClick={() => viewReport(appt._id)}>
+                      View Report
+                    </button>
+                    <button
+                      className="btn delete"
+                      onClick={() => deleteReport(appt._id)}
+                    >
+                      Delete Report
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* MEDICAL RECORD MODAL */}
+      {/* ========== TIME MODAL ========== */}
+      {showTimeBox && (
+        <div className="modal">
+          <div className="modal-box">
+            <h3>Assign Visit Time</h3>
+            <input
+              type="time"
+              value={tempTime}
+              onChange={(e) => setTempTime(e.target.value)}
+              className="time-modal-input"
+            />
+
+            <div className="modal-actions">
+              <button
+                className="btn reject"
+                onClick={() => setShowTimeBox(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn approve"
+                disabled={!tempTime}
+                onClick={() => {
+                  setVisitTimes((prev) => ({
+                    ...prev,
+                    [selectedApptId]: tempTime,
+                  }));
+                  setShowTimeBox(false);
+                }}
+              >
+                Save Time
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== RECORD MODAL ========== */}
       {showRecordBox && (
         <div className="modal">
           <div className="modal-box">
             <h3>Add Medical Record</h3>
+
             <input
               placeholder="Diagnosis"
               value={diagnosis}
@@ -265,6 +342,7 @@ function DoctorDashboard() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
+
             <div className="modal-actions">
               <button className="btn reject" onClick={() => setShowRecordBox(false)}>
                 Cancel
@@ -277,15 +355,14 @@ function DoctorDashboard() {
         </div>
       )}
 
-      {/* UPLOAD REPORT MODAL */}
+      {/* ========== UPLOAD MODAL ========== */}
       {showUploadBox && (
         <div className="modal">
           <div className="modal-box">
             <h3>Upload Report</h3>
-            <input
-              type="file"
-              onChange={(e) => setReportFile(e.target.files[0])}
-            />
+
+            <input type="file" onChange={(e) => setReportFile(e.target.files[0])} />
+
             <div className="modal-actions">
               <button className="btn reject" onClick={() => setShowUploadBox(false)}>
                 Cancel

@@ -19,8 +19,7 @@ exports.getDoctorAppointments = async (req, res) => {
 // ✅ UPDATE appointment status (APPROVE / REJECT)
 exports.updateAppointmentStatus = async (req, res) => {
   try {
-    const { status } = req.body;
-
+const { status, visitTime } = req.body;
     if (!["approved", "rejected"].includes(status)) {
       return res.status(400).json({ message: "Invalid status" });
     }
@@ -37,8 +36,11 @@ exports.updateAppointmentStatus = async (req, res) => {
     }
 
     appointment.status = status;
-    await appointment.save();
+if (status === "approved" && visitTime) {
+  appointment.visitTime = visitTime;
+}
 
+await appointment.save();
     res.json({
       message: "Appointment updated successfully",
       appointment,
