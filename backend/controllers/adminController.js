@@ -62,3 +62,49 @@ exports.getDoctors = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch doctors" });
   }
 };
+
+// GET ALL PATIENTS WITH THEIR LATEST DOCTOR (if any)
+exports.getPatients = async (req, res) => {
+  try {
+    // fetch all patients
+    const patients = await Patient.find().lean();
+
+    // load latest appointment for each patient to figure out attending doctor
+    const appointments = await require("../models/Appointment")
+      .find({ patientId: { $in: patients.map(p => p._id) } })
+      .sort({ appointmentDate: -1 })
+      .populate("doctorId", "name");
+
+    const map = {};
+    appointments.forEach((a) => {
+      if (!map[a.patientId]) {
+        map[a.patientId] = a.doctorId ? a.doctorId.name : null;
+      }
+    });
+
+    const result = patients.map((p) => ({
+      _id: p._id,
+      fullName: p.fullName,
+      email: p.email,
+      doctor: map[p._id] || null,
+    }));
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to fetch patients" });
+  }
+};
+
+// GET PATIENT BY ID
+exports.getPatientById = async (req, res) => {
+  try {
+    const patient = await Patient.findById(req.params.id);
+    if (!patient) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
+    res.json(patient);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch patient" });
+  }
+};

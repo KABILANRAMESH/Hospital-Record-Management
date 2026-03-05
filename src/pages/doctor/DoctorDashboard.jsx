@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/axios";
 import "./DoctorDashboard.css";
@@ -7,41 +7,29 @@ function DoctorDashboard() {
   const navigate = useNavigate();
 
   const user = (() => {
-    try {
-      return JSON.parse(localStorage.getItem("user"));
-    } catch {
-      return null;
-    }
+    try { return JSON.parse(localStorage.getItem("user")); }
+    catch { return null; }
   })();
 
-  const [appointments, setAppointments] = useState([]);
-
-  const [showRecordBox, setShowRecordBox] = useState(false);
-  const [showUploadBox, setShowUploadBox] = useState(false);
-  const [showTimeBox, setShowTimeBox] = useState(false);
-
+  const [appointments, setAppointments]     = useState([]);
+  const [showRecordBox, setShowRecordBox]   = useState(false);
+  const [showUploadBox, setShowUploadBox]   = useState(false);
+  const [showTimeBox, setShowTimeBox]       = useState(false);
   const [selectedApptId, setSelectedApptId] = useState(null);
 
-  const [diagnosis, setDiagnosis] = useState("");
+  const [diagnosis, setDiagnosis]       = useState("");
   const [prescription, setPrescription] = useState("");
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes]               = useState("");
+  const [visitTimes, setVisitTimes]     = useState({});
+  const [tempTime, setTempTime]         = useState("");
+  const [reportFile, setReportFile]     = useState(null);
 
-  // 🔥 store time per appointment
-  const [visitTimes, setVisitTimes] = useState({});
+  const [searchQuery, setSearchQuery]   = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
+  // track which cards are expanded (formerly flipped)
+  const [expandedCards, setExpandedCards] = useState(new Set());
 
-  const [tempTime, setTempTime] = useState("");
-  const [reportFile, setReportFile] = useState(null);
-
-  /* ================= AUTH ================= */
-  useEffect(() => {
-    if (!user || user.role !== "doctor") {
-      navigate("/");
-      return;
-    }
-    fetchAppointments();
-  }, [navigate]);
-
-  /* ================= FETCH ================= */
+  /* ── FETCH ── */
   const fetchAppointments = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -56,27 +44,26 @@ function DoctorDashboard() {
     }
   };
 
-  /* ================= APPROVE / REJECT ================= */
+  /* ── AUTH ── */
+  useEffect(() => {
+    if (!user || user.role !== "doctor") { navigate("/"); return; }
+    fetchAppointments();
+  }, [navigate]);
+
+  /* ── STATUS ── */
   const updateStatus = async (id, status) => {
     try {
       const token = localStorage.getItem("token");
-
       await api.put(
         `/api/doctor/appointments/${id}`,
-        {
-          status,
-          visitTime: visitTimes[id] || "",
-        },
+        { status, visitTime: visitTimes[id] || "" },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       fetchAppointments();
-    } catch {
-      alert("Failed to update status");
-    }
+    } catch { alert("Failed to update status"); }
   };
 
-  /* ================= MEDICAL RECORD ================= */
+  /* ── RECORD ── */
   const saveMedicalRecord = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -85,38 +72,28 @@ function DoctorDashboard() {
         { diagnosis, prescription, notes },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       setShowRecordBox(false);
-      setDiagnosis("");
-      setPrescription("");
-      setNotes("");
+      setDiagnosis(""); setPrescription(""); setNotes("");
       fetchAppointments();
-    } catch {
-      alert("Failed to save medical record");
-    }
+    } catch { alert("Failed to save medical record"); }
   };
 
-  /* ================= REPORT ================= */
+  /* ── REPORT ── */
   const uploadReport = async () => {
     if (!reportFile) return alert("Select a file");
-
     try {
       const token = localStorage.getItem("token");
       const formData = new FormData();
       formData.append("report", reportFile);
-
       await api.post(
         `/api/doctor/appointments/${selectedApptId}/report`,
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       setShowUploadBox(false);
       setReportFile(null);
       fetchAppointments();
-    } catch {
-      alert("Upload failed");
-    }
+    } catch { alert("Upload failed"); }
   };
 
   const viewReport = async (id) => {
@@ -137,180 +114,357 @@ function DoctorDashboard() {
     fetchAppointments();
   };
 
+  /* ── STATS ── */
+  const stats = useMemo(() => ({
+    total:     appointments.length,
+    pending:   appointments.filter(a => a.status === "pending").length,
+    approved:  appointments.filter(a => a.status === "approved").length,
+    completed: appointments.filter(a => a.status === "completed").length,
+  }), [appointments]);
+
+  /* ── FILTER ── */
+  const filtered = useMemo(() =>
+    appointments.filter(appt => {
+      const name = appt.patientId?.fullName?.toLowerCase() || "";
+      return (
+        name.includes(searchQuery.toLowerCase()) &&
+        (activeFilter === "all" || appt.status === activeFilter)
+      );
+    }),
+  [appointments, searchQuery, activeFilter]);
+
+  /* ── HELPERS ── */
+  const getInitials = (name = "P") =>
+    name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+
+  const formatDate = (d) =>
+    new Date(d).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" });
+
+  const toggleCard = (id) => {
+    // open or collapse details for a card
+    setExpandedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
+      return newSet;
+    });
+  };
+
   if (!user) return null;
 
+  const doctorName = user.fullName || user.name || "Doctor";
+
   return (
-    <div className="layout">
-      {/* ========== SIDEBAR ========== */}
-      <aside className="sidebar">
-        <h2 className="sidebar-title">
-          Doctor <span>Panel</span>
-        </h2>
+    <div className="doctor-layout">
 
-        <div className="online">
-          <div className="dot"></div>
-          Online
+      {/* ══════════════ SIDEBAR ══════════════ */}
+      <aside className="dr-sidebar">
+
+        <div className="dr-brand">
+          <div className="dr-brand-icon">🛡️</div>
+          <span className="dr-brand-name">HealthSync</span>
         </div>
 
-        <div className="sidebar-cards">
-          <div className="side-card amber">
-            <strong>Total Appointments</strong>
-            <p>{appointments.length}</p>
-          </div>
+        {/* Nav */}
+        <div className="dr-nav-item active">
+          <span className="dr-nav-icon">📋</span>
+          Appointments
+        </div>
 
-          <div className="side-card indigo">
-            <strong>Doctor</strong>
-            <p>{user.fullName || user.name}</p>
+        <div className="dr-sidebar-divider" />
+
+        <div className="dr-nav-label">Overview</div>
+
+        <div className="dr-stat-row">
+          <div className="dr-stat-pill">
+            <span className="dr-stat-pill-label">📋 Total</span>
+            <span className="dr-stat-pill-value">{stats.total}</span>
+          </div>
+          <div className="dr-stat-pill">
+            <span className="dr-stat-pill-label">⏳ Pending</span>
+            <span className="dr-stat-pill-value">{stats.pending}</span>
+          </div>
+          <div className="dr-stat-pill">
+            <span className="dr-stat-pill-label">✅ Approved</span>
+            <span className="dr-stat-pill-value">{stats.approved}</span>
+          </div>
+          <div className="dr-stat-pill">
+            <span className="dr-stat-pill-label">🩺 Completed</span>
+            <span className="dr-stat-pill-value">{stats.completed}</span>
           </div>
         </div>
+
+        <div className="dr-sidebar-divider" />
+
+        <div className="dr-nav-label">Actions</div>
+
+        <div
+          className="dr-nav-item"
+          style={{ cursor: "pointer", color: "#dc2626" }}
+          onClick={() => { localStorage.clear(); navigate("/"); }}
+        >
+          <span className="dr-nav-icon">🚪</span>
+          Logout
+        </div>
+
+        <div className="dr-user-card">
+          <div className="dr-avatar">{getInitials(doctorName)}</div>
+          <div className="dr-user-info">
+            <div className="dr-user-name">{doctorName}</div>
+            <div className="dr-user-role">
+              <span className="dr-online-dot" style={{ marginRight: 5 }} />
+              Physician · Online
+            </div>
+          </div>
+        </div>
+
       </aside>
 
-      {/* ========== MAIN ========== */}
-      <div className="main">
-        <div className="top-header">
-          <h3>Appointments</h3>
-          <button className="btn reject" onClick={() => navigate("/")}>
-            Logout
-          </button>
+      {/* ══════════════ MAIN ══════════════ */}
+      <div className="dr-main">
+
+        {/* Hero banner */}
+        <div className="dr-hero">
+          <div className="dr-hero-title">Dr. {doctorName}</div>
+          <div className="dr-hero-sub">
+            {stats.total} appointments · {stats.pending} pending review
+          </div>
+
+          <div className="dr-hero-controls">
+            <div className="dr-search-wrap">
+              <span className="dr-search-icon">🔍</span>
+              <input
+                className="dr-search"
+                placeholder="Search patient name..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            <div className="dr-tabs">
+              {["all", "pending", "approved", "rejected", "completed"].map(tab => (
+                <button
+                  key={tab}
+                  className={`dr-tab${activeFilter === tab ? " active" : ""}`}
+                  onClick={() => setActiveFilter(tab)}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div className="content">
-          {appointments.map((appt) => (
-            <div className="appointment-card" key={appt._id}>
-              <div>
-                <h4>{appt.patientId?.fullName || "Patient"}</h4>
+        {/* Cards */}
+        <div className="dr-content">
+          <div className="dr-grid">
 
-                <p className="appt-date">
-                  📅 {new Date(appt.appointmentDate).toLocaleDateString()}
-                </p>
-
-                {appt.visitTime && (
-                  <p className="appt-time">⏰ {appt.visitTime}</p>
-                )}
-
-                <span className={`status ${appt.status}`}>
-                  {appt.status}
-                </span>
+            {filtered.length === 0 && (
+              <div className="dr-empty">
+                <div className="dr-empty-icon">🗂️</div>
+                <p>No appointments found</p>
               </div>
+            )}
 
-              <div className="card-actions">
-                {appt.status === "pending" && (
-                  <>
-                    <button
-                      className="time-chip"
-                      onClick={() => {
-                        setSelectedApptId(appt._id);
-                        setTempTime(visitTimes[appt._id] || "");
-                        setShowTimeBox(true);
-                      }}
-                    >
-                      {visitTimes[appt._id] || "Set Time"} ⏰
-                    </button>
-
-                    <button
-                      className="btn approve"
-                      disabled={!visitTimes[appt._id]}
-                      onClick={() => updateStatus(appt._id, "approved")}
-                    >
-                      Approve
-                    </button>
-
-                    <button
-                      className="btn reject"
-                      onClick={() => updateStatus(appt._id, "rejected")}
-                    >
-                      Reject
-                    </button>
-                  </>
-                )}
-
-                {/* ===== MEDICAL RECORD BUTTON ===== */}
-{appt.medicalRecord?.diagnosis ? (
-  <button
-    className="btn view"
-    onClick={() => {
-      setSelectedApptId(appt._id);
-      setDiagnosis(appt.medicalRecord.diagnosis);
-      setPrescription(appt.medicalRecord.prescription);
-      setNotes(appt.medicalRecord.notes);
-      setShowRecordBox(true);
-    }}
+           {filtered.map((appt, i) => (
+  <div
+    className={`dr-card ${expandedCards.has(appt._id) ? "expanded" : ""}`}
+    key={appt._id}
+    style={{ animationDelay: `${i * 0.04}s` }}
   >
-    View / Edit Record
-  </button>
-) : (
-  <button
-    className="btn record"
-    onClick={() => {
-      setSelectedApptId(appt._id);
-      setDiagnosis("");
-      setPrescription("");
-      setNotes("");
-      setShowRecordBox(true);
-    }}
-  >
-    Add Record
-  </button>
-)}
 
-                {!appt.report && (
-                  <button
-                    className="btn upload"
-                    onClick={() => {
-                      setSelectedApptId(appt._id);
-                      setShowUploadBox(true);
-                    }}
-                  >
-                    Upload Report
-                  </button>
-                )}
+    {/* Front Side */}
+    <div className="dr-card-front" onClick={() => toggleCard(appt._id)}>
+      <div className="dr-card-top">
+                    <div className="dr-patient-avatar">
+                      {getInitials(appt.patientId?.fullName)}
+                    </div>
+                    <div className="dr-patient-info">
+                      <div className="dr-patient-name">
+                        {appt.patientId?.fullName || "Patient"}
+                      </div>
+                      <div className="dr-card-meta">
+                        <span className="dr-meta-chip">
+                          📅 {formatDate(appt.appointmentDate)}
+                        </span>
+                        {appt.visitTime && (
+                          <span className="dr-meta-chip">⏰ {appt.visitTime}</span>
+                        )}
+                      </div>
+                    </div>
+                    <span className={`dr-status ${appt.status}`}>
+                      {appt.status}
+                    </span>
+                    <span className="dr-expand-icon">
+                      {expandedCards.has(appt._id) ? '▲' : '▼'}
+                    </span>
+                  </div>
+                </div>
 
-                {appt.report && (
-                  <>
-                    <button className="btn view" onClick={() => viewReport(appt._id)}>
-                      View Report
-                    </button>
-                    <button
-                      className="btn delete"
-                      onClick={() => deleteReport(appt._id)}
-                    >
-                      Delete Report
-                    </button>
-                  </>
+                {/* Details section (shown when expanded) */}
+                {expandedCards.has(appt._id) && (
+                  <div className="dr-card-details">
+                  {/* Diagnosis preview */}
+                  {appt.medicalRecord?.diagnosis && (
+                    <div className="dr-record-preview">
+                      <div className="dr-record-preview-label">Diagnosis</div>
+                      <div className="dr-record-preview-value">
+                        {appt.medicalRecord.diagnosis}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="dr-card-divider" />
+
+                  {/* Action buttons */}
+                  <div className="dr-card-actions">
+
+                    {appt.status === "pending" && (
+                      <>
+                        <button
+                          className="dr-time-chip"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedApptId(appt._id);
+                            setTempTime(visitTimes[appt._id] || "");
+                            setShowTimeBox(true);
+                          }}
+                        >
+                          {visitTimes[appt._id] ? `⏰ ${visitTimes[appt._id]}` : "⏰ Set Time"}
+                        </button>
+
+                        <button
+                          className="dr-btn dr-btn-approve"
+                          disabled={!visitTimes[appt._id]}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateStatus(appt._id, "approved");
+                          }}
+                        >
+                          ✓ Approve
+                        </button>
+
+                        <button
+                          className="dr-btn dr-btn-reject"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateStatus(appt._id, "rejected");
+                          }}
+                        >
+                          ✕ Reject
+                        </button>
+                      </>
+                    )}
+
+                    {appt.status === "approved" && (
+                      <button
+                        className="dr-btn dr-btn-complete"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateStatus(appt._id, "completed");
+                        }}
+                      >
+                        ✔ Mark Complete
+                      </button>
+                    )}
+
+                    {appt.medicalRecord?.diagnosis ? (
+                      <button
+                        className="dr-btn dr-btn-record"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedApptId(appt._id);
+                          setDiagnosis(appt.medicalRecord.diagnosis);
+                          setPrescription(appt.medicalRecord.prescription);
+                          setNotes(appt.medicalRecord.notes);
+                          setShowRecordBox(true);
+                        }}
+                      >
+                        📋 Edit Record
+                      </button>
+                    ) : (
+                      <button
+                        className="dr-btn dr-btn-record"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedApptId(appt._id);
+                          setDiagnosis(""); setPrescription(""); setNotes("");
+                          setShowRecordBox(true);
+                        }}
+                      >
+                        📋 Add Record
+                      </button>
+                    )}
+
+                    {!appt.report && (
+                      <button
+                        className="dr-btn dr-btn-upload"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedApptId(appt._id);
+                          setShowUploadBox(true);
+                        }}
+                      >
+                        📎 Upload Report
+                      </button>
+                    )}
+
+                    {appt.report && (
+                      <>
+                        <button
+                          className="dr-btn dr-btn-view"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            viewReport(appt._id);
+                          }}
+                        >
+                          👁 View Report
+                        </button>
+                        <button
+                          className="dr-btn dr-btn-delete"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteReport(appt._id);
+                          }}
+                        >
+                          🗑 Delete
+                        </button>
+                      </>
+                    )}
+
+                  </div>
+                </div>
                 )}
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* ========== TIME MODAL ========== */}
+      {/* ══ TIME MODAL ══ */}
       {showTimeBox && (
-        <div className="modal">
-          <div className="modal-box">
-            <h3>Assign Visit Time</h3>
-            <input
-              type="time"
-              value={tempTime}
-              onChange={(e) => setTempTime(e.target.value)}
-              className="time-modal-input"
-            />
-
-            <div className="modal-actions">
+        <div className="dr-modal-overlay" onClick={() => setShowTimeBox(false)}>
+          <div className="dr-modal" onClick={e => e.stopPropagation()}>
+            <div className="dr-modal-header">
+              <div className="dr-modal-title">Set Visit Time</div>
+              <button className="dr-modal-close" onClick={() => setShowTimeBox(false)}>✕</button>
+            </div>
+            <div className="dr-field">
+              <label>Visit Time</label>
+              <input
+                type="time"
+                className="dr-input"
+                value={tempTime}
+                onChange={e => setTempTime(e.target.value)}
+              />
+            </div>
+            <div className="dr-modal-actions">
+              <button className="dr-btn-modal-cancel" onClick={() => setShowTimeBox(false)}>Cancel</button>
               <button
-                className="btn reject"
-                onClick={() => setShowTimeBox(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn approve"
+                className="dr-btn-modal-save"
                 disabled={!tempTime}
                 onClick={() => {
-                  setVisitTimes((prev) => ({
-                    ...prev,
-                    [selectedApptId]: tempTime,
-                  }));
+                  setVisitTimes(prev => ({ ...prev, [selectedApptId]: tempTime }));
                   setShowTimeBox(false);
                 }}
               >
@@ -321,59 +475,54 @@ function DoctorDashboard() {
         </div>
       )}
 
-      {/* ========== RECORD MODAL ========== */}
+      {/* ══ RECORD MODAL ══ */}
       {showRecordBox && (
-        <div className="modal">
-          <div className="modal-box">
-            <h3>Add Medical Record</h3>
-
-            <input
-              placeholder="Diagnosis"
-              value={diagnosis}
-              onChange={(e) => setDiagnosis(e.target.value)}
-            />
-            <input
-              placeholder="Prescription"
-              value={prescription}
-              onChange={(e) => setPrescription(e.target.value)}
-            />
-            <textarea
-              placeholder="Notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-
-            <div className="modal-actions">
-              <button className="btn reject" onClick={() => setShowRecordBox(false)}>
-                Cancel
-              </button>
-              <button className="btn approve" onClick={saveMedicalRecord}>
-                Save
-              </button>
+        <div className="dr-modal-overlay" onClick={() => setShowRecordBox(false)}>
+          <div className="dr-modal" onClick={e => e.stopPropagation()}>
+            <div className="dr-modal-header">
+              <div className="dr-modal-title">Medical Record</div>
+              <button className="dr-modal-close" onClick={() => setShowRecordBox(false)}>✕</button>
+            </div>
+            <div className="dr-field">
+              <label>Diagnosis</label>
+              <input className="dr-input" placeholder="Enter diagnosis" value={diagnosis} onChange={e => setDiagnosis(e.target.value)} />
+            </div>
+            <div className="dr-field">
+              <label>Prescription</label>
+              <input className="dr-input" placeholder="Medications / dosage" value={prescription} onChange={e => setPrescription(e.target.value)} />
+            </div>
+            <div className="dr-field">
+              <label>Clinical Notes</label>
+              <textarea className="dr-textarea" placeholder="Additional observations..." value={notes} onChange={e => setNotes(e.target.value)} />
+            </div>
+            <div className="dr-modal-actions">
+              <button className="dr-btn-modal-cancel" onClick={() => setShowRecordBox(false)}>Cancel</button>
+              <button className="dr-btn-modal-save" onClick={saveMedicalRecord}>Save Record</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ========== UPLOAD MODAL ========== */}
+      {/* ══ UPLOAD MODAL ══ */}
       {showUploadBox && (
-        <div className="modal">
-          <div className="modal-box">
-            <h3>Upload Report</h3>
-
-            <input type="file" onChange={(e) => setReportFile(e.target.files[0])} />
-
-            <div className="modal-actions">
-              <button className="btn reject" onClick={() => setShowUploadBox(false)}>
-                Cancel
-              </button>
-              <button className="btn approve" onClick={uploadReport}>
-                Upload
-              </button>
+        <div className="dr-modal-overlay" onClick={() => setShowUploadBox(false)}>
+          <div className="dr-modal" onClick={e => e.stopPropagation()}>
+            <div className="dr-modal-header">
+              <div className="dr-modal-title">Upload Report</div>
+              <button className="dr-modal-close" onClick={() => setShowUploadBox(false)}>✕</button>
+            </div>
+            <div className="dr-field">
+              <label>Report File</label>
+              <input type="file" className="dr-input" onChange={e => setReportFile(e.target.files[0])} />
+            </div>
+            <div className="dr-modal-actions">
+              <button className="dr-btn-modal-cancel" onClick={() => setShowUploadBox(false)}>Cancel</button>
+              <button className="dr-btn-modal-save" disabled={!reportFile} onClick={uploadReport}>Upload</button>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }

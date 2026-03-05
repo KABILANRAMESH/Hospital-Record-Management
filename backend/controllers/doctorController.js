@@ -19,8 +19,9 @@ exports.getDoctorAppointments = async (req, res) => {
 // ✅ UPDATE appointment status (APPROVE / REJECT)
 exports.updateAppointmentStatus = async (req, res) => {
   try {
-const { status, visitTime } = req.body;
-    if (!["approved", "rejected"].includes(status)) {
+    const { status, visitTime } = req.body;
+    // permit completing an already approved appointment
+    if (!["approved", "rejected", "completed"].includes(status)) {
       return res.status(400).json({ message: "Invalid status" });
     }
 
@@ -35,10 +36,15 @@ const { status, visitTime } = req.body;
       return res.status(403).json({ message: "Unauthorized" });
     }
 
+    // extra validation for completed status
+    if (status === "completed" && appointment.status !== "approved") {
+      return res.status(400).json({ message: "Only approved appointments can be completed" });
+    }
+
     appointment.status = status;
-if (status === "approved" && visitTime) {
-  appointment.visitTime = visitTime;
-}
+    if (status === "approved" && visitTime) {
+      appointment.visitTime = visitTime;
+    }
 
 await appointment.save();
     res.json({

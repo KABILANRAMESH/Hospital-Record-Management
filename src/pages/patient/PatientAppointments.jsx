@@ -68,7 +68,7 @@ function PatientAppointments() {
           </div>
 
           <div className="pa-filter">
-            <span className="material-icons-round">filter_list</span>
+            <span className="material-icons-round">Filter List</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -76,6 +76,7 @@ function PatientAppointments() {
               <option value="all">All</option>
               <option value="approved">Approved</option>
               <option value="pending">Pending</option>
+              <option value="rejected">Rejected</option>
             </select>
           </div>
         </header>

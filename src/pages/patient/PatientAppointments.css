@@ -103,7 +103,10 @@
   background: #fef3c7;
   color: #b45309;
 }
-
+.pa-status.rejected {
+  background-color: #ffe2e2;
+  color: #c62828;
+}
 /* BODY */
 .pa-card-body {
   display: flex;

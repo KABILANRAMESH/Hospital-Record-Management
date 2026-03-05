@@ -7,56 +7,54 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("patient");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setLoading(true); // 🔥 Start loading
 
-    try {
-      let response;
+  try {
+    let response;
 
     if (role === "patient") {
-  response = await api.post(
-  "/api/patients/login",
-  { email, password }
-);
+      response = await api.post(
+        "/api/patients/login",
+        { email, password }
+      );
 
-  // ✅ SAVE TOKEN (THIS WAS MISSING)
-  localStorage.setItem("token", response.data.token);
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem(
+        "patient",
+        JSON.stringify(response.data.patient)
+      );
 
-  // save patient info
-  localStorage.setItem(
-    "patient",
-    JSON.stringify(response.data.patient)
-  );
+      navigate("/patient/dashboard");
+    } else {
+      response = await api.post(
+        "/api/auth/login",
+        { email, password, role }
+      );
 
-  navigate("/patient/dashboard");
-}
-else {
-response = await api.post(
-  "/api/auth/login",
-  { email, password, role }
-);
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem(
+        "user",
+        JSON.stringify(response.data.user)
+      );
 
-// 🔥 THIS WAS MISSING
-localStorage.setItem("token", response.data.token);
-
-localStorage.setItem(
-  "user",
-  JSON.stringify(response.data.user)
-);
-
-if (response.data.user.role === "admin") {
-  navigate("/admin/dashboard");
-} else {
-  navigate("/doctor/dashboard");
-}
-
+      if (response.data.user.role === "admin") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/doctor/dashboard");
       }
-    } catch (err) {
-      alert(err.response?.data?.message || "Login failed");
     }
-  };
+
+  } catch (err) {
+    alert(err.response?.data?.message || "Login failed");
+  } finally {
+    setLoading(false); // 🔥 Stop loading
+  }
+};
 
   return (
     <div className="login-container">
@@ -96,8 +94,8 @@ if (response.data.user.role === "admin") {
             />
           </div>
 
-          <button type="submit" className="login-btn">
-            Login
+          <button type="submit" className="login-btn" disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
           </button>
           <p className="register-link">
   New patient?{" "}
