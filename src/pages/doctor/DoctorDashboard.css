@@ -372,12 +372,15 @@
 .doctor-layout .dr-content::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 99px; }
 
 .doctor-layout .dr-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
-  gap: 16px;
-  perspective: 1000px;
+  column-count: 3;
+  column-gap: 16px;
 }
 
+.doctor-layout .dr-card {
+  break-inside: avoid;
+  margin-bottom: 16px;
+  width: 100%;
+}
 /* Empty */
 .doctor-layout .dr-empty {
   grid-column: 1 / -1;

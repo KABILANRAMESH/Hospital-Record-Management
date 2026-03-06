@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./PatientDashboard.css";
 import PatientLayout from "../../components/layouts/PatientLayout";
+import HealthChat from "../../components/layouts/HealthChat";
 
 function PatientDashboard() {
   const [patient, setPatient] = useState(null);
@@ -42,34 +43,34 @@ function PatientDashboard() {
       {/* STATS */}
       <div className="pro-stats">
         <StatCard
-          title="Heart Rate"
-          value="72"
-          unit="bpm"
-          icon="HR"
-          color="rose"
-        />
+  title="Heart Rate"
+  value="72"
+  unit="bpm"
+  icon="favorite"
+  color="rose"
+/>
 
-        <StatCard
-          title="Blood Group"
-          value={patient.bloodGroup}
-          icon="Blood"
-          color="blue"
-        />
+<StatCard
+  title="Blood Group"
+  value={patient.bloodGroup}
+  icon="bloodtype"
+  color="blue"
+/>
 
-        <StatCard
-          title="Health Status"
-          value="Good"
-          icon="Status"
-          color="green"
-        />
+<StatCard
+  title="Health Status"
+  value="Good"
+  icon="monitor_heart"
+  color="green"
+/>
       </div>
 
       {/* DETAILS */}
       <div className="pro-card">
-        <h2>
-          <span className="material-symbols-outlined">Personal Information</span>
-          
-        </h2>
+        <h2 className="section-title">
+  <span className="material-symbols-outlined">person</span>
+  Personal Information
+</h2>
 <br></br>
         <div className="pro-info-grid">
           <Info label="Full Name" value={patient.fullName} />
@@ -94,6 +95,7 @@ function PatientDashboard() {
           </p>
         </div>
       </div>
+      <HealthChat />
     </PatientLayout>
   );
 }

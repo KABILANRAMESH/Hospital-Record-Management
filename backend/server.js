@@ -4,14 +4,18 @@ const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/db");
 
+// existing routes
 const authRoutes = require("./routes/authRoutes");
 const patientRoutes = require("./routes/patientRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const doctorRoutes = require("./routes/doctorRoutes");
 
+// AI route
+const aiRoutes = require("./routes/ai");
+
 const app = express();
 
-// ✅ FIXED CORS
+// CORS
 app.use(
   cors({
     origin: [
@@ -24,7 +28,7 @@ app.use(
 
 app.use(express.json());
 
-// connect DB
+// connect database
 connectDB();
 
 // test route
@@ -32,13 +36,17 @@ app.get("/", (req, res) => {
   res.send("Backend running with MongoDB 🚀");
 });
 
-// routes
+// API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/patients", patientRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/doctor", doctorRoutes);
 
+// AI chatbot route
+app.use("/api", aiRoutes);
+
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
