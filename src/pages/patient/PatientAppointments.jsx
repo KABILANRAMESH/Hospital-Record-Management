@@ -76,6 +76,7 @@ function PatientAppointments() {
               <option value="all">All</option>
               <option value="approved">Approved</option>
               <option value="pending">Pending</option>
+              <option value="completed">Completed</option>
               <option value="rejected">Rejected</option>
             </select>
           </div>

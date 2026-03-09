@@ -130,7 +130,7 @@ exports.getMedicalHistory = async (req, res) => {
 
     const appointments = await Appointment.find({
       patientId: req.user.id,
-      status: "approved",
+      status: { $in: ["approved", "completed"] },
     })
       .select(
         "appointmentDate doctorId medicalRecord report.fileName"
