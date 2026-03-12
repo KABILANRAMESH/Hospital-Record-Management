@@ -84,6 +84,21 @@
   font-weight: 600;
 }
 
+.nav-btn.logout {
+  padding-top: 10px;
+  background: #dc2626;
+  color: white;
+  font-weight: 600;
+  margin-top: 250px;
+  margin-bottom: 0;
+  transition: all 0.2s ease;
+}
+
+.nav-btn.logout:hover {
+  background: #b91c1c;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+}
+
 /* =====================
    MAIN CONTENT (SCROLLS)
 ===================== */

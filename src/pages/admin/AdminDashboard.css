@@ -244,14 +244,20 @@
   padding: 9px 12px;
   border-radius: var(--radius-sm);
   font-size: 13.5px;
-  font-weight: 500;
-  color: var(--red);
+  font-weight: 600;
+  color: white;
+  background: #dc2626;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.2s ease;
+  margin-top:250px;
   margin-bottom: 2px;
+  border: none;
 }
 
-.layout .adm-logout-item:hover { background: var(--red-light); }
+.layout .adm-logout-item:hover {
+  background: #b91c1c;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+}
 
 /* ===================================================
    MAIN

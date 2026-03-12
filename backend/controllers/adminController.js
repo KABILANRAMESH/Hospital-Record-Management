@@ -22,7 +22,7 @@ exports.getAdminStats = async (req, res) => {
 // ✅ ADD DOCTOR (THIS WAS MISSING)
 exports.addDoctor = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, mobile } = req.body;
 
     // check if doctor already exists
     const existingDoctor = await User.findOne({ email });
@@ -39,6 +39,7 @@ exports.addDoctor = async (req, res) => {
       email,
       password: hashedPassword,
       role: "doctor",
+      mobile: mobile || "",
     });
 
     res.status(201).json({
@@ -49,17 +50,35 @@ exports.addDoctor = async (req, res) => {
     res.status(500).json({ message: "Failed to add doctor" });
   }
 };
-// GET ALL DOCTORS (name + email)
+// GET ALL DOCTORS (name + email + mobile)
 exports.getDoctors = async (req, res) => {
   try {
     const doctors = await User.find(
       { role: "doctor" },
-      { name: 1, email: 1 } // only send required fields
+      { name: 1, email: 1, mobile: 1 } // include mobile field
     );
 
     res.status(200).json(doctors);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch doctors" });
+  }
+};
+
+// GET DOCTOR BY ID
+exports.getDoctorById = async (req, res) => {
+  try {
+    const doctor = await User.findOne(
+      { _id: req.params.id, role: "doctor" },
+      { name: 1, email: 1, mobile: 1 }
+    );
+
+    if (!doctor) {
+      return res.status(404).json({ message: "Doctor not found" });
+    }
+
+    res.status(200).json(doctor);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch doctor" });
   }
 };
 
@@ -106,5 +125,69 @@ exports.getPatientById = async (req, res) => {
     res.json(patient);
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch patient" });
+  }
+};
+
+// UPDATE DOCTOR
+exports.updateDoctor = async (req, res) => {
+  try {
+    const { name, email, mobile, password } = req.body;
+    const doctorId = req.params.id;
+
+    const updateData = { name, email, mobile };
+
+    // Hash password if provided
+    if (password) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    const updatedDoctor = await User.findByIdAndUpdate(
+      doctorId,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedDoctor) {
+      return res.status(404).json({ message: "Doctor not found" });
+    }
+
+    res.status(200).json({
+      message: "Doctor updated successfully",
+      doctor: updatedDoctor,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update doctor" });
+  }
+};
+
+// UPDATE PATIENT
+exports.updatePatient = async (req, res) => {
+  try {
+    const { fullName, email, age, gender, mobile, address, bloodGroup, height, weight, password } = req.body;
+    const patientId = req.params.id;
+
+    const updateData = { fullName, email, age, gender, mobile, address, bloodGroup, height, weight };
+
+    // Hash password if provided
+    if (password) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    const updatedPatient = await Patient.findByIdAndUpdate(
+      patientId,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedPatient) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
+
+    res.status(200).json({
+      message: "Patient updated successfully",
+      patient: updatedPatient,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update patient" });
   }
 };

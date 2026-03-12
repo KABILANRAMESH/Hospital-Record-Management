@@ -223,20 +223,29 @@
 }
 
 .doctor-layout .dr-logout-btn {
-  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
   border-radius: var(--radius-sm);
-  background: var(--red-light);
+  background: #dc2626;
   border: none;
-  color: var(--red);
-  font-size: 12px;
+  color: white;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   font-family: 'Inter', sans-serif;
-  transition: background 0.15s;
+  transition: all 0.2s ease;
+  margin-top: 230px;
   flex-shrink: 0;
+  width: 100%;
+  justify-content: flex-start;
 }
 
-.doctor-layout .dr-logout-btn:hover { background: #fecaca; }
+.doctor-layout .dr-logout-btn:hover {
+  background: #b91c1c;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+}
 
 /* ===================================================
    MAIN

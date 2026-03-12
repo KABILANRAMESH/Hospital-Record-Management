@@ -23,6 +23,9 @@ function DoctorDashboard() {
   const [visitTimes, setVisitTimes]     = useState({});
   const [tempTime, setTempTime]         = useState("");
   const [reportFile, setReportFile]     = useState(null);
+  const [loadingRecord, setLoadingRecord] = useState(false);
+  const [loadingReport, setLoadingReport] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState(null);
 
   const [searchQuery, setSearchQuery]   = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
@@ -52,6 +55,7 @@ function DoctorDashboard() {
 
   /* ── STATUS ── */
   const updateStatus = async (id, status) => {
+    setLoadingStatus(id);
     try {
       const token = localStorage.getItem("token");
       await api.put(
@@ -61,10 +65,12 @@ function DoctorDashboard() {
       );
       fetchAppointments();
     } catch { alert("Failed to update status"); }
+    finally { setLoadingStatus(null); }
   };
 
   /* ── RECORD ── */
   const saveMedicalRecord = async () => {
+    setLoadingRecord(true);
     try {
       const token = localStorage.getItem("token");
       await api.put(
@@ -76,11 +82,13 @@ function DoctorDashboard() {
       setDiagnosis(""); setPrescription(""); setNotes("");
       fetchAppointments();
     } catch { alert("Failed to save medical record"); }
+    finally { setLoadingRecord(false); }
   };
 
   /* ── REPORT ── */
   const uploadReport = async () => {
     if (!reportFile) return alert("Select a file");
+    setLoadingReport(true);
     try {
       const token = localStorage.getItem("token");
       const formData = new FormData();
@@ -94,6 +102,7 @@ function DoctorDashboard() {
       setReportFile(null);
       fetchAppointments();
     } catch { alert("Upload failed"); }
+    finally { setLoadingReport(false); }
   };
 
   const viewReport = async (id) => {
@@ -198,14 +207,13 @@ function DoctorDashboard() {
 
         <div className="dr-nav-label">Actions</div>
 
-        <div
-          className="dr-nav-item"
-          style={{ cursor: "pointer", color: "#dc2626" }}
+        <button
+          className="dr-logout-btn"
           onClick={() => { localStorage.clear(); navigate("/"); }}
         >
           <span className="dr-nav-icon">🚪</span>
           Logout
-        </div>
+        </button>
 
         <div className="dr-user-card">
           <div className="dr-avatar">{getInitials(doctorName)}</div>
@@ -335,23 +343,24 @@ function DoctorDashboard() {
 
                         <button
                           className="dr-btn dr-btn-approve"
-                          disabled={!visitTimes[appt._id]}
+                          disabled={!visitTimes[appt._id] || loadingStatus === appt._id}
                           onClick={(e) => {
                             e.stopPropagation();
                             updateStatus(appt._id, "approved");
                           }}
                         >
-                          ✓ Approve
+                          {loadingStatus === appt._id ? "Loading..." : "✓ Approve"}
                         </button>
 
                         <button
                           className="dr-btn dr-btn-reject"
+                          disabled={loadingStatus === appt._id}
                           onClick={(e) => {
                             e.stopPropagation();
                             updateStatus(appt._id, "rejected");
                           }}
                         >
-                          ✕ Reject
+                          {loadingStatus === appt._id ? "Loading..." : "✕ Reject"}
                         </button>
                       </>
                     )}
@@ -359,12 +368,13 @@ function DoctorDashboard() {
                     {appt.status === "approved" && (
                       <button
                         className="dr-btn dr-btn-complete"
+                        disabled={loadingStatus === appt._id}
                         onClick={(e) => {
                           e.stopPropagation();
                           updateStatus(appt._id, "completed");
                         }}
                       >
-                        ✔ Mark Complete
+                        {loadingStatus === appt._id ? "Loading..." : "✔ Mark Complete"}
                       </button>
                     )}
 
@@ -496,8 +506,10 @@ function DoctorDashboard() {
               <textarea className="dr-textarea" placeholder="Additional observations..." value={notes} onChange={e => setNotes(e.target.value)} />
             </div>
             <div className="dr-modal-actions">
-              <button className="dr-btn-modal-cancel" onClick={() => setShowRecordBox(false)}>Cancel</button>
-              <button className="dr-btn-modal-save" onClick={saveMedicalRecord}>Save Record</button>
+              <button className="dr-btn-modal-cancel" onClick={() => setShowRecordBox(false)} disabled={loadingRecord}>Cancel</button>
+              <button className="dr-btn-modal-save" onClick={saveMedicalRecord} disabled={loadingRecord}>
+                {loadingRecord ? "Saving..." : "Save Record"}
+              </button>
             </div>
           </div>
         </div>
@@ -516,8 +528,10 @@ function DoctorDashboard() {
               <input type="file" className="dr-input" onChange={e => setReportFile(e.target.files[0])} />
             </div>
             <div className="dr-modal-actions">
-              <button className="dr-btn-modal-cancel" onClick={() => setShowUploadBox(false)}>Cancel</button>
-              <button className="dr-btn-modal-save" disabled={!reportFile} onClick={uploadReport}>Upload</button>
+              <button className="dr-btn-modal-cancel" onClick={() => setShowUploadBox(false)} disabled={loadingReport}>Cancel</button>
+              <button className="dr-btn-modal-save" disabled={!reportFile || loadingReport} onClick={uploadReport}>
+                {loadingReport ? "Uploading..." : "Upload"}
+              </button>
             </div>
           </div>
         </div>

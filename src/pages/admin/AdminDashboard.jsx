@@ -22,11 +22,23 @@ function AdminDashboard() {
     name: "",
     email: "",
     password: "",
+    mobile: "",
   });
+
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [doctorDetails, setDoctorDetails] = useState(null);
+  const [showDoctorModal, setShowDoctorModal] = useState(false);
+  const [editDoctorMode, setEditDoctorMode] = useState(false);
+  const [editDoctorForm, setEditDoctorForm] = useState({});
+  const [loadingDoctorAdd, setLoadingDoctorAdd] = useState(false);
+  const [loadingDoctorEdit, setLoadingDoctorEdit] = useState(false);
 
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [patientDetails, setPatientDetails] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [showPatientModal, setShowPatientModal] = useState(false);
+  const [editPatientMode, setEditPatientMode] = useState(false);
+  const [editPatientForm, setEditPatientForm] = useState({});
+  const [loadingPatientEdit, setLoadingPatientEdit] = useState(false);
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -60,6 +72,20 @@ function AdminDashboard() {
     setDoctors(res.data);
   };
 
+  const handleDoctorClick = async (doctor) => {
+    setSelectedDoctor(doctor);
+    const token = localStorage.getItem("token");
+    try {
+      const res = await api.get(`/api/admin/doctors/${doctor._id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDoctorDetails(res.data);
+      setShowDoctorModal(true);
+    } catch (error) {
+      console.error("Failed to fetch doctor details", error);
+    }
+  };
+
   const fetchPatients = async () => {
     const token = localStorage.getItem("token");
     const res = await api.get("/api/admin/patients", {
@@ -74,13 +100,101 @@ function AdminDashboard() {
 
   const handleAddDoctor = async (e) => {
     e.preventDefault();
+    setLoadingDoctorAdd(true);
     const token = localStorage.getItem("token");
-    await api.post("/api/admin/add-doctor", doctorForm, {
-      headers: { Authorization: `Bearer ${token}` },
+    try {
+      await api.post("/api/admin/add-doctor", doctorForm, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDoctorForm({ name: "", email: "", password: "", mobile: "" });
+      fetchStats();
+      fetchDoctors();
+      alert("Doctor added successfully!");
+    } catch (error) {
+      alert("Failed to add doctor");
+    } finally {
+      setLoadingDoctorAdd(false);
+    }
+  };
+
+  const handleDoctorEdit = () => {
+    setEditDoctorMode(true);
+    setEditDoctorForm({
+      name: doctorDetails.name,
+      email: doctorDetails.email,
+      mobile: doctorDetails.mobile || "",
+      password: "",
     });
-    setDoctorForm({ name: "", email: "", password: "" });
-    fetchStats();
-    fetchDoctors();
+  };
+
+  const handleDoctorEditChange = (e) => {
+    setEditDoctorForm({ ...editDoctorForm, [e.target.name]: e.target.value });
+  };
+
+  const handleSaveDoctorEdit = async (e) => {
+    e.preventDefault();
+    setLoadingDoctorEdit(true);
+    const token = localStorage.getItem("token");
+    try {
+      await api.put(`/api/admin/doctors/${doctorDetails._id}`, editDoctorForm, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setEditDoctorMode(false);
+      fetchDoctors();
+      // Refresh doctor details
+      const res = await api.get(`/api/admin/doctors/${doctorDetails._id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDoctorDetails(res.data);
+      alert("Doctor updated successfully!");
+    } catch (error) {
+      alert("Failed to update doctor");
+    } finally {
+      setLoadingDoctorEdit(false);
+    }
+  };
+
+  const handlePatientEdit = () => {
+    setEditPatientMode(true);
+    setEditPatientForm({
+      fullName: patientDetails.fullName,
+      email: patientDetails.email,
+      age: patientDetails.age || "",
+      gender: patientDetails.gender || "",
+      mobile: patientDetails.mobile || "",
+      address: patientDetails.address || "",
+      bloodGroup: patientDetails.bloodGroup || "",
+      height: patientDetails.height || "",
+      weight: patientDetails.weight || "",
+      password: "",
+    });
+  };
+
+  const handlePatientEditChange = (e) => {
+    setEditPatientForm({ ...editPatientForm, [e.target.name]: e.target.value });
+  };
+
+  const handleSavePatientEdit = async (e) => {
+    e.preventDefault();
+    setLoadingPatientEdit(true);
+    const token = localStorage.getItem("token");
+    try {
+      await api.put(`/api/admin/patients/${patientDetails._id}`, editPatientForm, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setEditPatientMode(false);
+      fetchPatients();
+      // Refresh patient details
+      const res = await api.get(`/api/admin/patients/${patientDetails._id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setPatientDetails(res.data);
+      alert("Patient updated successfully!");
+    } catch (error) {
+      alert("Failed to update patient");
+    } finally {
+      setLoadingPatientEdit(false);
+    }
   };
 
   const getInitials = (name = "D") =>
@@ -129,7 +243,7 @@ function AdminDashboard() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setPatientDetails(res.data);
-      setShowModal(true);
+      setShowPatientModal(true);
     } catch (error) {
       console.error("Failed to fetch patient details", error);
     }
@@ -257,7 +371,8 @@ function AdminDashboard() {
                     <div
                       className="adm-doctor-card"
                       key={doc._id}
-                      style={{ animationDelay: `${i * 0.04}s` }}
+                      style={{ animationDelay: `${i * 0.04}s`, cursor: "pointer" }}
+                      onClick={() => handleDoctorClick(doc)}
                     >
                       <div className="adm-doctor-avatar">{getInitials(doc.name)}</div>
                       <div className="adm-doctor-info">
@@ -323,8 +438,20 @@ function AdminDashboard() {
                       />
                     </div>
 
-                    <button className="adm-submit-btn" type="submit">
-                      + Add Doctor
+                    <div className="adm-field">
+                      <label>Phone Number</label>
+                      <input
+                        className="adm-input"
+                        name="mobile"
+                        type="tel"
+                        placeholder="+1 (555) 123-4567"
+                        value={doctorForm.mobile}
+                        onChange={handleDoctorChange}
+                      />
+                    </div>
+
+                    <button className="adm-submit-btn" type="submit" disabled={loadingDoctorAdd}>
+                      {loadingDoctorAdd ? "Adding Doctor..." : "+ Add Doctor"}
                     </button>
 
                   </form>
@@ -371,23 +498,228 @@ function AdminDashboard() {
         </div>
       </main>
 
-      {/* Patient Details Modal */}
-      {showModal && patientDetails && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+      {/* Doctor Details Modal */}
+      {showDoctorModal && doctorDetails && (
+        <div className="modal-overlay" onClick={() => setShowDoctorModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Doctor Details</h2>
+            {editDoctorMode ? (
+              <form onSubmit={handleSaveDoctorEdit}>
+                <div className="adm-field">
+                  <label>Name</label>
+                  <input
+                    className="adm-input"
+                    type="text"
+                    name="name"
+                    value={editDoctorForm.name}
+                    onChange={handleDoctorEditChange}
+                    required
+                  />
+                </div>
+                <div className="adm-field">
+                  <label>Email</label>
+                  <input
+                    className="adm-input"
+                    type="email"
+                    name="email"
+                    value={editDoctorForm.email}
+                    onChange={handleDoctorEditChange}
+                    required
+                  />
+                </div>
+                <div className="adm-field">
+                  <label>Phone</label>
+                  <input
+                    className="adm-input"
+                    type="tel"
+                    name="mobile"
+                    value={editDoctorForm.mobile}
+                    onChange={handleDoctorEditChange}
+                  />
+                </div>
+                <div className="adm-field">
+                  <label>New Password (leave empty to keep current)</label>
+                  <input
+                    className="adm-input"
+                    type="password"
+                    name="password"
+                    value={editDoctorForm.password}
+                    onChange={handleDoctorEditChange}
+                    placeholder="Enter new password or leave blank"
+                  />
+                </div>
+                <div style={{ display: "flex", gap: "10px", marginTop: "15px" }}>
+                  <button type="submit" className="adm-submit-btn" disabled={loadingDoctorEdit}>
+                    {loadingDoctorEdit ? "Saving..." : "Save Changes"}
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => setEditDoctorMode(false)}
+                    disabled={loadingDoctorEdit}
+                    style={{ background: "#9ca3af", padding: "10px 20px", border: "none", borderRadius: "8px", color: "white", cursor: "pointer", opacity: loadingDoctorEdit ? 0.6 : 1 }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <p><strong>Name:</strong> {doctorDetails.name}</p>
+                <p><strong>Email:</strong> {doctorDetails.email}</p>
+                <p><strong>Phone:</strong> {doctorDetails.mobile || 'N/A'}</p>
+                <div style={{ display: "flex", gap: "10px", marginTop: "15px" }}>
+                  <button onClick={handleDoctorEdit} className="adm-submit-btn">Edit</button>
+                  <button onClick={() => setShowDoctorModal(false)} style={{ background: "#9ca3af", padding: "10px 20px", border: "none", borderRadius: "8px", color: "white", cursor: "pointer" }}>Close</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Patient Details Modal */}
+      {showPatientModal && patientDetails && (
+        <div className="modal-overlay" onClick={() => setShowPatientModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxHeight: "90vh", overflowY: "auto" }}>
             <h2>Patient Details</h2>
-            <p><strong>Patient ID:</strong> {patientDetails.patientId}</p>
-            <p><strong>Name:</strong> {patientDetails.fullName}</p>
-            <p><strong>Email:</strong> {patientDetails.email}</p>
-            <p><strong>Age:</strong> {patientDetails.age || 'N/A'}</p>
-            <p><strong>Gender:</strong> {patientDetails.gender || 'N/A'}</p>
-            <p><strong>Mobile:</strong> {patientDetails.mobile || 'N/A'}</p>
-            <p><strong>Address:</strong> {patientDetails.address || 'N/A'}</p>
-            <p><strong>Blood Group:</strong> {patientDetails.bloodGroup || 'N/A'}</p>
-            <p><strong>Height:</strong> {patientDetails.height ? `${patientDetails.height} cm` : 'N/A'}</p>
-            <p><strong>Weight:</strong> {patientDetails.weight ? `${patientDetails.weight} kg` : 'N/A'}</p>
-            <p><strong>Doctor:</strong> {selectedPatient.doctor ? `Dr. ${selectedPatient.doctor}` : 'No doctor assigned'}</p>
-            <button onClick={() => setShowModal(false)}>Close</button>
+            {editPatientMode ? (
+              <form onSubmit={handleSavePatientEdit} style={{ maxHeight: "70vh", overflowY: "auto" }}>
+                <div className="adm-field">
+                  <label>Full Name</label>
+                  <input
+                    className="adm-input"
+                    type="text"
+                    name="fullName"
+                    value={editPatientForm.fullName}
+                    onChange={handlePatientEditChange}
+                    required
+                  />
+                </div>
+                <div className="adm-field">
+                  <label>Email</label>
+                  <input
+                    className="adm-input"
+                    type="email"
+                    name="email"
+                    value={editPatientForm.email}
+                    onChange={handlePatientEditChange}
+                    required
+                  />
+                </div>
+                <div className="adm-field">
+                  <label>Age</label>
+                  <input
+                    className="adm-input"
+                    type="number"
+                    name="age"
+                    value={editPatientForm.age}
+                    onChange={handlePatientEditChange}
+                  />
+                </div>
+                <div className="adm-field">
+                  <label>Gender</label>
+                  <input
+                    className="adm-input"
+                    type="text"
+                    name="gender"
+                    value={editPatientForm.gender}
+                    onChange={handlePatientEditChange}
+                  />
+                </div>
+                <div className="adm-field">
+                  <label>Mobile</label>
+                  <input
+                    className="adm-input"
+                    type="tel"
+                    name="mobile"
+                    value={editPatientForm.mobile}
+                    onChange={handlePatientEditChange}
+                  />
+                </div>
+                <div className="adm-field">
+                  <label>Address</label>
+                  <input
+                    className="adm-input"
+                    type="text"
+                    name="address"
+                    value={editPatientForm.address}
+                    onChange={handlePatientEditChange}
+                  />
+                </div>
+                <div className="adm-field">
+                  <label>Blood Group</label>
+                  <input
+                    className="adm-input"
+                    type="text"
+                    name="bloodGroup"
+                    value={editPatientForm.bloodGroup}
+                    onChange={handlePatientEditChange}
+                  />
+                </div>
+                <div className="adm-field">
+                  <label>Height (cm)</label>
+                  <input
+                    className="adm-input"
+                    type="number"
+                    name="height"
+                    value={editPatientForm.height}
+                    onChange={handlePatientEditChange}
+                  />
+                </div>
+                <div className="adm-field">
+                  <label>Weight (kg)</label>
+                  <input
+                    className="adm-input"
+                    type="number"
+                    name="weight"
+                    value={editPatientForm.weight}
+                    onChange={handlePatientEditChange}
+                  />
+                </div>
+                <div className="adm-field">
+                  <label>New Password (leave empty to keep current)</label>
+                  <input
+                    className="adm-input"
+                    type="password"
+                    name="password"
+                    value={editPatientForm.password}
+                    onChange={handlePatientEditChange}
+                    placeholder="Enter new password or leave blank"
+                  />
+                </div>
+                <div style={{ display: "flex", gap: "10px", marginTop: "15px" }}>
+                  <button type="submit" className="adm-submit-btn" disabled={loadingPatientEdit}>
+                    {loadingPatientEdit ? "Saving..." : "Save Changes"}
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => setEditPatientMode(false)}
+                    disabled={loadingPatientEdit}
+                    style={{ background: "#9ca3af", padding: "10px 20px", border: "none", borderRadius: "8px", color: "white", cursor: "pointer", opacity: loadingPatientEdit ? 0.6 : 1 }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <p><strong>Patient ID:</strong> {patientDetails.patientId}</p>
+                <p><strong>Name:</strong> {patientDetails.fullName}</p>
+                <p><strong>Email:</strong> {patientDetails.email}</p>
+                <p><strong>Age:</strong> {patientDetails.age || 'N/A'}</p>
+                <p><strong>Gender:</strong> {patientDetails.gender || 'N/A'}</p>
+                <p><strong>Mobile:</strong> {patientDetails.mobile || 'N/A'}</p>
+                <p><strong>Address:</strong> {patientDetails.address || 'N/A'}</p>
+                <p><strong>Blood Group:</strong> {patientDetails.bloodGroup || 'N/A'}</p>
+                <p><strong>Height:</strong> {patientDetails.height ? `${patientDetails.height} cm` : 'N/A'}</p>
+                <p><strong>Weight:</strong> {patientDetails.weight ? `${patientDetails.weight} kg` : 'N/A'}</p>
+                <p><strong>Doctor:</strong> {selectedPatient.doctor ? `Dr. ${selectedPatient.doctor}` : 'No doctor assigned'}</p>
+                <div style={{ display: "flex", gap: "10px", marginTop: "15px" }}>
+                  <button onClick={handlePatientEdit} className="adm-submit-btn">Edit</button>
+                  <button onClick={() => setShowPatientModal(false)} style={{ background: "#9ca3af", padding: "10px 20px", border: "none", borderRadius: "8px", color: "white", cursor: "pointer" }}>Close</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

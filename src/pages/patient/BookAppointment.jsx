@@ -11,6 +11,7 @@ function BookAppointment() {
   const [doctorId, setDoctorId] = useState("");
   const [date, setDate] = useState("");
   const [loading, setLoading] = useState(true);
+  const [bookingLoading, setBookingLoading] = useState(false);
 
   // 🔹 Fetch doctors
   useEffect(() => {
@@ -52,6 +53,7 @@ function BookAppointment() {
       return;
     }
 
+    setBookingLoading(true);
     try {
       const token = localStorage.getItem("token");
       await api.post(
@@ -69,6 +71,8 @@ function BookAppointment() {
       navigate("/patient/dashboard");
     } catch (err) {
       alert(err.response?.data?.message || "Failed to book appointment");
+    } finally {
+      setBookingLoading(false);
     }
   };
 
@@ -120,9 +124,9 @@ function BookAppointment() {
             <button
               onClick={handleBook}
               className="book-button"
-              disabled={loading}
+              disabled={loading || bookingLoading}
             >
-              {loading ? "Please wait..." : "Book Appointment"}
+              {bookingLoading ? "Booking..." : "Book Appointment"}
             </button>
           </div>
         </div>

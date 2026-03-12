@@ -5,6 +5,7 @@ import "./Register.css";
 
 function Register() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -25,6 +26,7 @@ function Register() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
      await api.post(
   "/api/patients/register",
@@ -34,6 +36,8 @@ function Register() {
       navigate("/");
     } catch (error) {
       alert(error.response?.data?.message || "Registration failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -116,7 +120,9 @@ function Register() {
             <textarea rows="3" name="address" onChange={handleChange} required />
           </div>
 
-          <button type="submit">Register</button>
+          <button type="submit" disabled={loading}>
+            {loading ? "Registering..." : "Register"}
+          </button>
         </form>
 
         <p className="login-link">
