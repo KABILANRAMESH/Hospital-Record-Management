@@ -15,16 +15,21 @@ const aiRoutes = require("./routes/ai");
 
 const app = express();
 
-// CORS
+// CORS configuration
 app.use(
   cors({
     origin: [
       "http://localhost:5173",
       "https://hospital-frontend-u08s.onrender.com"
     ],
-    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
   })
 );
+
+// allow preflight requests
+app.options("*", cors());
 
 app.use(express.json());
 
